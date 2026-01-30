@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { User } from "lucide-react";
 import ButtonMinimalist from "../Micro/ButtonMinimalist.jsx";
 import AuthModal from "../Auth/AuthModal.jsx";
 import CartModal from "../Cart/CartModal.jsx";
@@ -9,6 +11,7 @@ import { logout } from "../../features/auth/authSlice.jsx";
 
 const Header = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const totalQuantity = useSelector((state) => state.cart.totalQuantity);
   const { isAuthenticated } = useSelector((state) => state.auth);
 
@@ -23,6 +26,10 @@ const Header = () => {
 
   const handleLogout = () => {
     dispatch(logout());
+  };
+
+  const handleAccountClick = () => {
+    navigate('/account');
   };
 
   return (
@@ -48,13 +55,20 @@ const Header = () => {
         <div className="flex gap-2 items-center">
           {isAuthenticated ? (
             <>
+              <div className="hidden lg:flex gap-2">
+                <button
+                  onClick={handleAccountClick}
+                  className="flex items-center gap-2 px-4 py-2 text-white hover:bg-white/10 rounded-full transition-colors"
+                >
+                  <User className="w-5 h-5" />
+                  <span className="font-medium">Account</span>
+                </button>
+                <ButtonMinimalist title="Logout" onClick={handleLogout} />
+              </div>
               <ButtonMinimalist 
                 title={`Bag/${totalQuantity}`} 
                 onClick={() => setShowCartModal(true)}
               />
-              <div className="hidden lg:block">
-                <ButtonMinimalist title="Logout" onClick={handleLogout} />
-              </div>
             </>
           ) : (
             <>

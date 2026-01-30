@@ -129,3 +129,44 @@ export const paymentsAPI = {
   getPaymentStatus: (paymentIntentId) =>
     apiRequest(`/payments/status/${paymentIntentId}`),
 };
+
+// User API
+export const userAPI = {
+  getProfile: () => apiRequest('/users/profile'),
+
+  updateProfile: (profileData) =>
+    apiRequest('/users/profile', {
+      method: 'PUT',
+      body: JSON.stringify(profileData),
+    }),
+
+  changePassword: (passwordData) =>
+    apiRequest('/users/change-password', {
+      method: 'PUT',
+      body: JSON.stringify(passwordData),
+    }),
+
+  getAddresses: () => apiRequest('/users/addresses'),
+
+  addAddress: (addressData) =>
+    apiRequest('/users/addresses', {
+      method: 'POST',
+      body: JSON.stringify(addressData),
+    }),
+
+  updateAddress: (addressId, addressData) =>
+    apiRequest(`/users/addresses/${addressId}`, {
+      method: 'PUT',
+      body: JSON.stringify(addressData),
+    }),
+
+  deleteAddress: (addressId) =>
+    apiRequest(`/users/addresses/${addressId}`, {
+      method: 'DELETE',
+    }),
+
+  setDefaultAddress: (addressId) =>
+    apiRequest(`/users/addresses/${addressId}/default`, {
+      method: 'PUT',
+    }),
+};

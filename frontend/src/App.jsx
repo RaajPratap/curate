@@ -5,17 +5,33 @@ import ShopPage from './Components/Screen/ShopPage.jsx';
 import ProductDetailPage from './Components/Screen/ProductDetailPage.jsx';
 import CheckoutPage from './Components/Checkout/CheckoutPage.jsx';
 import OrderConfirmation from './Components/Checkout/OrderConfirmation.jsx';
+import {
+  AccountLayout,
+  AccountPage,
+  OrdersPage,
+  OrderDetailPage,
+  AddressBook,
+} from './Components/Account/index.js';
 
 function App() {
   return (
     <StripeProvider>
       <Router>
         <Routes>
+          {/* Public Routes */}
           <Route path="/" element={<MainScreen />} />
           <Route path="/shop" element={<ShopPage />} />
           <Route path="/product/:id" element={<ProductDetailPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/checkout/confirmation" element={<OrderConfirmation />} />
+
+          {/* Account Routes */}
+          <Route path="/account" element={<AccountLayout />}>
+            <Route index element={<AccountPage />} />
+            <Route path="orders" element={<OrdersPage />} />
+            <Route path="orders/:orderId" element={<OrderDetailPage />} />
+            <Route path="addresses" element={<AddressBook />} />
+          </Route>
         </Routes>
       </Router>
     </StripeProvider>
