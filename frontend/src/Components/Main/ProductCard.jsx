@@ -1,33 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { addItemToCart } from '../../features/cart/cartSlice.jsx'
-
-// --- Helper: Icon for the button ---
-const PlusIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className="mr-2"
-  >
-    <line x1="12" y1="5" x2="12" y2="19"></line>
-    <line x1="5" y1="12" x2="19" y2="12"></line>
-  </svg>
-);
+import { useToast } from '../UI/ToastProvider.jsx'
+import { Plus, ShoppingBag } from 'lucide-react'
 
 // --- The Main Product Card Component ---
 const ProductCard = ({ product }) => {
   const dispatch = useDispatch();
+  const { success, error } = useToast();
 
   const handleQuickAdd = () => {
     if (product.countInStock > 0) {
       dispatch(addItemToCart(product));
+      success(`${product.name} added to cart!`, 3000)
+    } else {
+      error(`${product.name} is out of stock`, 3000)
     }
   };
 
@@ -155,7 +142,7 @@ const ProductCard = ({ product }) => {
                 : 'hover:bg-opacity-70 cursor-pointer'
             }`}
           >
-            <PlusIcon />
+            <Plus className="w-4 h-4 mr-2" />
             {countInStock === 0 ? 'Out of Stock' : 'Quick Add'}
           </button>
         </div>
