@@ -7,11 +7,11 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import serverless from 'serverless-http';
 
-import connectDB from '../config/db.js';
-import authRoutes from '../routes/authRoutes.js';
-import productRoutes from '../routes/productRoutes.js';
-import orderRoutes from '../routes/orderRoutes.js';
-import { notFound, errorHandler } from '../middleware/errorMiddleware.js';
+import connectDB from './config/db.js';
+import authRoutes from './routes/authRoutes.js';
+import productRoutes from './routes/productRoutes.js';
+import orderRoutes from './routes/orderRoutes.js';
+import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
 // Load env vars
 dotenv.config();
