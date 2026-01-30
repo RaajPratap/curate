@@ -102,3 +102,30 @@ export const ordersAPI = {
       method: 'PUT',
     }),
 };
+
+// Payments API
+export const paymentsAPI = {
+  createPaymentIntent: (amount, currency = 'inr', shipping, items) =>
+    apiRequest('/payments/create-payment-intent', {
+      method: 'POST',
+      body: JSON.stringify({
+        amount: Math.round(amount * 100), // Convert to cents/paise
+        currency,
+        shipping,
+        items: items.map((item) => ({
+          id: item._id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+      }),
+    }),
+
+  confirmPayment: (paymentIntentId) =>
+    apiRequest(`/payments/confirm-payment/${paymentIntentId}`, {
+      method: 'POST',
+    }),
+
+  getPaymentStatus: (paymentIntentId) =>
+    apiRequest(`/payments/status/${paymentIntentId}`),
+};

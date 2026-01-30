@@ -11,6 +11,7 @@ import connectDB from '../server/config/db.js';
 import authRoutes from '../server/routes/authRoutes.js';
 import productRoutes from '../server/routes/productRoutes.js';
 import orderRoutes from '../server/routes/orderRoutes.js';
+import paymentRoutes from '../server/routes/paymentRoutes.js';
 import { notFound, errorHandler } from '../server/middleware/errorMiddleware.js';
 
 // Load env vars
@@ -61,6 +62,7 @@ app.options('*', cors());
 app.use('/auth', authRoutes);
 app.use('/products', productRoutes);
 app.use('/orders', orderRoutes);
+app.use('/payments', paymentRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
