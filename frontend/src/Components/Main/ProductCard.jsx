@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { addItemToCart } from '../../features/cart/cartSlice.jsx'
 import { useToast } from '../UI/ToastProvider.jsx'
-import { Plus, ShoppingBag } from 'lucide-react'
+import { Plus } from 'lucide-react'
 
 // --- The Main Product Card Component ---
 const ProductCard = ({ product }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { success, error } = useToast();
 
   const handleQuickAdd = () => {
@@ -71,8 +73,15 @@ const ProductCard = ({ product }) => {
     return () => clearInterval(interval);
   }, [imageCount]); // Dependency array ensures this effect runs only once.
 
+  const handleCardClick = () => {
+    navigate(`/product/${product._id}`);
+  };
+
   return (
-    <div className="w-full max-w-sm bg-zinc-800 text-white rounded-2xl shadow-2xl overflow-hidden font-sans">
+    <div 
+      onClick={handleCardClick}
+      className="w-full max-w-sm bg-zinc-800 text-white rounded-2xl shadow-2xl overflow-hidden font-sans cursor-pointer hover:shadow-3xl transition-shadow"
+    >
       
       {/* Segmented Progress Bar Container */}
       <div className="relative top-0 left-0 flex w-full items-center gap-1.5 px-4 pt-3">

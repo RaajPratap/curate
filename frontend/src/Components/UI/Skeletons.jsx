@@ -79,4 +79,72 @@ export const PageSkeleton = () => {
   );
 };
 
+export const ProductDetailSkeleton = () => {
+  return (
+    <div className="pt-[10vw] px-4 sm:px-6 lg:px-8 xl:px-12 pb-12 animate-pulse">
+      {/* Breadcrumb skeleton */}
+      <div className="flex gap-2 mb-8">
+        <div className="h-4 bg-zinc-700 rounded w-12" />
+        <div className="h-4 bg-zinc-700 rounded w-2" />
+        <div className="h-4 bg-zinc-700 rounded w-12" />
+        <div className="h-4 bg-zinc-700 rounded w-2" />
+        <div className="h-4 bg-zinc-700 rounded w-32" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        {/* Image Gallery Skeleton */}
+        <div className="space-y-4">
+          <div className="aspect-square bg-zinc-800 rounded-2xl" />
+          <div className="flex gap-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="w-20 h-20 bg-zinc-800 rounded-lg" />
+            ))}
+          </div>
+        </div>
+
+        {/* Product Info Skeleton */}
+        <div className="space-y-6">
+          <div className="space-y-3">
+            <div className="h-4 bg-zinc-700 rounded w-24" />
+            <div className="h-10 bg-zinc-700 rounded w-3/4" />
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="w-5 h-5 bg-zinc-700 rounded" />
+              ))}
+            </div>
+            <div className="h-8 bg-zinc-700 rounded w-32" />
+          </div>
+
+          <div className="space-y-2">
+            <div className="h-4 bg-zinc-700 rounded w-full" />
+            <div className="h-4 bg-zinc-700 rounded w-full" />
+            <div className="h-4 bg-zinc-700 rounded w-3/4" />
+          </div>
+
+          <div className="grid grid-cols-3 gap-4 py-6 border-y border-zinc-800">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="text-center space-y-2">
+                <div className="w-6 h-6 bg-zinc-700 rounded mx-auto" />
+                <div className="h-3 bg-zinc-700 rounded w-16 mx-auto" />
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="h-4 bg-zinc-700 rounded w-20" />
+            <div className="h-10 bg-zinc-800 rounded-full w-32" />
+            <div className="h-4 bg-zinc-700 rounded w-24" />
+          </div>
+
+          <div className="flex gap-4">
+            <div className="flex-1 h-14 bg-zinc-700 rounded-full" />
+            <div className="w-14 h-14 bg-zinc-800 rounded-full" />
+            <div className="w-14 h-14 bg-zinc-800 rounded-full" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default ProductCardSkeleton;
