@@ -170,3 +170,35 @@ export const userAPI = {
       method: 'PUT',
     }),
 };
+
+// Wishlist API
+export const wishlistAPI = {
+  getWishlist: () => apiRequest('/wishlist'),
+
+  addToWishlist: (productId) =>
+    apiRequest('/wishlist', {
+      method: 'POST',
+      body: JSON.stringify({ productId }),
+    }),
+
+  removeFromWishlist: (wishlistId) =>
+    apiRequest(`/wishlist/${wishlistId}`, {
+      method: 'DELETE',
+    }),
+
+  clearWishlist: () =>
+    apiRequest('/wishlist', {
+      method: 'DELETE',
+    }),
+
+  checkWishlistStatus: (productId) =>
+    apiRequest(`/wishlist/check/${productId}`),
+
+  getWishlistCount: () => apiRequest('/wishlist/count'),
+
+  toggleWishlist: (productId) =>
+    apiRequest('/wishlist/toggle', {
+      method: 'POST',
+      body: JSON.stringify({ productId }),
+    }),
+};

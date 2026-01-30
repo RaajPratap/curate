@@ -9,6 +9,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  Heart,
 } from 'lucide-react';
 import { logout } from '../../features/auth/authSlice.jsx';
 
@@ -33,6 +34,11 @@ const AccountLayout = () => {
       label: 'Orders',
       path: '/account/orders',
       icon: ShoppingBag,
+    },
+    {
+      label: 'Wishlist',
+      path: '/wishlist',
+      icon: Heart,
     },
     {
       label: 'Addresses',

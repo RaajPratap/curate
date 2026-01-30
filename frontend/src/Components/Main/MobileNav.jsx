@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Menu, X, ShoppingBag, User, LogOut, ChevronRight } from 'lucide-react';
+import { Menu, X, ShoppingBag, User, LogOut, ChevronRight, Heart } from 'lucide-react';
 import { logout } from '../../features/auth/authSlice.jsx';
 
 const MobileNav = () => {
@@ -11,6 +11,7 @@ const MobileNav = () => {
   
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   const { totalQuantity } = useSelector((state) => state.cart);
+  const { count: wishlistCount } = useSelector((state) => state.wishlist);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -96,6 +97,23 @@ const MobileNav = () => {
                 </span>
               )}
             </button>
+
+            {isAuthenticated && (
+              <button
+                onClick={() => handleNavigate('/wishlist')}
+                className="w-full flex items-center justify-between py-3 px-4 text-white hover:bg-zinc-800 rounded-lg transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <Heart className="w-5 h-5" />
+                  <span className="font-medium">Wishlist</span>
+                </div>
+                {wishlistCount > 0 && (
+                  <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                    {wishlistCount}
+                  </span>
+                )}
+              </button>
+            )}
 
             {isAuthenticated ? (
               <>

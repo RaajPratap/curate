@@ -3,6 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProductById } from '../../features/products/productsSlice.jsx';
 import { addItemToCart } from '../../features/cart/cartSlice.jsx';
+import { 
+  toggleWishlistItem, 
+  checkWishlistStatus 
+} from '../../features/wishlist/wishlistSlice.jsx';
 import { useToast } from '../UI/ToastProvider.jsx';
 import Header from '../Main/Header.jsx';
 import { ProductDetailSkeleton } from '../UI/Skeletons.jsx';
@@ -28,6 +32,10 @@ const ProductDetailPage = () => {
   const { currentProduct: product, loading, error } = useSelector(
     state => state.products
   );
+  const { wishlistedProductIds, loading: wishlistLoading } = useSelector(
+    state => state.wishlist
+  );
+  const { isAuthenticated } = useSelector((state) => state.auth);
   
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -36,8 +44,18 @@ const ProductDetailPage = () => {
   useEffect(() => {
     if (id) {
       dispatch(fetchProductById(id));
+      if (isAuthenticated) {
+        dispatch(checkWishlistStatus(id));
+      }
     }
-  }, [dispatch, id]);
+  }, [dispatch, id, isAuthenticated]);
+
+  // Update wishlist status when product IDs change
+  useEffect(() => {
+    if (id) {
+      setIsWishlisted(wishlistedProductIds.includes(id));
+    }
+  }, [wishlistedProductIds, id]);
 
   const handleAddToCart = () => {
     if (product.countInStock > 0) {
@@ -50,9 +68,19 @@ const ProductDetailPage = () => {
     }
   };
 
-  const handleWishlist = () => {
-    setIsWishlisted(!isWishlisted);
-    success(isWishlisted ? 'Removed from wishlist' : 'Added to wishlist!', 2000);
+  const handleWishlist = async () => {
+    if (!isAuthenticated) {
+      showError('Please sign in to add items to your wishlist', 3000);
+      return;
+    }
+
+    try {
+      await dispatch(toggleWishlistItem(product._id)).unwrap();
+      // The slice will update the state, which triggers the useEffect above
+      success(isWishlisted ? 'Removed from wishlist' : 'Added to wishlist!', 2000);
+    } catch (err) {
+      showError(err || 'Failed to update wishlist', 3000);
+    }
   };
 
   const handleShare = () => {
@@ -230,13 +258,14 @@ const ProductDetailPage = () => {
               
               <button
                 onClick={handleWishlist}
+                disabled={wishlistLoading}
                 className={`p-4 rounded-full border-2 transition-all ${
                   isWishlisted
-                    ? 'border-red-500 text-red-500'
+                    ? 'border-red-500 text-red-500 bg-red-500/10'
                     : 'border-zinc-600 text-zinc-400 hover:border-white hover:text-white'
-                }`}
+                } ${wishlistLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                <Heart className={`w-6 h-6 ${isWishlisted ? 'fill-current' : ''}`} />
+                <Heart className={`w-6 h-6 ${isWishlisted ? 'fill-current' : ''} ${wishlistLoading ? 'animate-pulse' : ''}`} />
               </button>
               
               <button

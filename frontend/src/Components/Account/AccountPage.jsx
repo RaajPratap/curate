@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { User, Mail, Calendar, Lock, Eye, EyeOff, Edit2, Check } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { User, Mail, Calendar, Lock, Eye, EyeOff, Edit2, Check, Heart, ArrowRight, ShoppingBag } from 'lucide-react';
 import { useToast } from '../UI/ToastProvider.jsx';
 import { userAPI } from '../../services/api.js';
-import { Skeleton } from '../ui/skeleton.jsx';
 
 const ProfileSkeleton = () => (
   <div className="space-y-6 animate-pulse">
@@ -26,7 +26,9 @@ const ProfileSkeleton = () => (
 
 const AccountPage = () => {
   const { user } = useSelector((state) => state.auth);
+  const { count: wishlistCount } = useSelector((state) => state.wishlist);
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -128,6 +130,37 @@ const AccountPage = () => {
   return (
     <div className="max-w-3xl">
       <h1 className="text-3xl font-bold text-white mb-8">My Profile</h1>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+        <button
+          onClick={() => navigate('/wishlist')}
+          className="flex items-center gap-4 p-4 bg-zinc-800 rounded-2xl hover:bg-zinc-700 transition-colors text-left"
+        >
+          <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">
+            <Heart className="w-6 h-6 text-red-500" />
+          </div>
+          <div className="flex-1">
+            <p className="text-2xl font-bold text-white">{wishlistCount}</p>
+            <p className="text-zinc-400 text-sm">Wishlist Items</p>
+          </div>
+          <ArrowRight className="w-5 h-5 text-zinc-500" />
+        </button>
+
+        <button
+          onClick={() => navigate('/account/orders')}
+          className="flex items-center gap-4 p-4 bg-zinc-800 rounded-2xl hover:bg-zinc-700 transition-colors text-left"
+        >
+          <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center">
+            <ShoppingBag className="w-6 h-6 text-white" />
+          </div>
+          <div className="flex-1">
+            <p className="text-2xl font-bold text-white">View</p>
+            <p className="text-zinc-400 text-sm">My Orders</p>
+          </div>
+          <ArrowRight className="w-5 h-5 text-zinc-500" />
+        </button>
+      </div>
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6">

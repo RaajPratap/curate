@@ -12,6 +12,7 @@ import authRoutes from '../server/routes/authRoutes.js';
 import productRoutes from '../server/routes/productRoutes.js';
 import orderRoutes from '../server/routes/orderRoutes.js';
 import paymentRoutes from '../server/routes/paymentRoutes.js';
+import wishlistRoutes from '../server/routes/wishlistRoutes.js';
 import { notFound, errorHandler } from '../server/middleware/errorMiddleware.js';
 
 // Load env vars
@@ -63,6 +64,7 @@ app.use('/auth', authRoutes);
 app.use('/products', productRoutes);
 app.use('/orders', orderRoutes);
 app.use('/payments', paymentRoutes);
+app.use('/wishlist', wishlistRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -83,6 +85,7 @@ app.get('/', (req, res) => {
       auth: '/api/auth',
       products: '/api/products',
       orders: '/api/orders',
+      wishlist: '/api/wishlist',
       health: '/api/health',
     }
   });

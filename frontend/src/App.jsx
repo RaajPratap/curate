@@ -12,6 +12,7 @@ import {
   OrderDetailPage,
   AddressBook,
 } from './Components/Account/index.js';
+import { WishlistPage } from './Components/Wishlist/index.js';
 
 function App() {
   return (
@@ -32,6 +33,9 @@ function App() {
             <Route path="orders/:orderId" element={<OrderDetailPage />} />
             <Route path="addresses" element={<AddressBook />} />
           </Route>
+
+          {/* Wishlist Route */}
+          <Route path="/wishlist" element={<WishlistPage />} />
         </Routes>
       </Router>
     </StripeProvider>

@@ -3,6 +3,7 @@ import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { addItemToCart } from '../../features/cart/cartSlice.jsx'
 import { useToast } from '../UI/ToastProvider.jsx'
+import { WishlistButton } from '../Wishlist/index.js'
 import { Plus } from 'lucide-react'
 
 // --- The Main Product Card Component ---
@@ -135,6 +136,15 @@ const ProductCard = ({ product }) => {
               />
             ))}
           </div>
+        </div>
+
+        {/* Wishlist Button */}
+        <div className="absolute top-4 right-4 z-10">
+          <WishlistButton 
+            productId={product._id}
+            size="md"
+            variant="filled"
+          />
         </div>
 
         {/* Quick Add Button */}

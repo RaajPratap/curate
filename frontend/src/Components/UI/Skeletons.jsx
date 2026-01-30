@@ -147,4 +147,44 @@ export const ProductDetailSkeleton = () => {
   );
 };
 
+export const WishlistSkeleton = () => {
+  return (
+    <div className="pt-[10vw] px-4 sm:px-6 lg:px-8 xl:px-12 pb-12 animate-pulse">
+      {/* Header skeleton */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        <div className="space-y-2">
+          <div className="h-10 bg-zinc-700 rounded w-48" />
+          <div className="h-5 bg-zinc-700 rounded w-32" />
+        </div>
+        <div className="flex gap-3">
+          <div className="h-10 bg-zinc-700 rounded-full w-28" />
+          <div className="h-10 bg-zinc-700 rounded-full w-28" />
+        </div>
+      </div>
+
+      {/* Grid skeleton */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="bg-zinc-800 rounded-2xl overflow-hidden">
+            <div className="aspect-square bg-zinc-700" />
+            <div className="p-4 space-y-3">
+              <div className="h-4 bg-zinc-700 rounded w-1/3" />
+              <div className="h-5 bg-zinc-700 rounded w-3/4" />
+              <div className="flex gap-1">
+                {[1, 2, 3, 4, 5].map((j) => (
+                  <div key={j} className="w-4 h-4 bg-zinc-700 rounded" />
+                ))}
+              </div>
+              <div className="flex justify-between items-center">
+                <div className="h-6 bg-zinc-700 rounded w-20" />
+                <div className="h-10 bg-zinc-700 rounded-full w-24" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export default ProductCardSkeleton;

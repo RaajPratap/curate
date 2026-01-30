@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { User } from "lucide-react";
+import { User, Heart } from "lucide-react";
 import ButtonMinimalist from "../Micro/ButtonMinimalist.jsx";
 import AuthModal from "../Auth/AuthModal.jsx";
 import CartModal from "../Cart/CartModal.jsx";
@@ -13,6 +13,7 @@ const Header = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const totalQuantity = useSelector((state) => state.cart.totalQuantity);
+  const { count: wishlistCount } = useSelector((state) => state.wishlist);
   const { isAuthenticated } = useSelector((state) => state.auth);
 
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -55,7 +56,19 @@ const Header = () => {
         <div className="flex gap-2 items-center">
           {isAuthenticated ? (
             <>
-              <div className="hidden lg:flex gap-2">
+              <div className="hidden lg:flex gap-2 items-center">
+                <button
+                  onClick={() => navigate('/wishlist')}
+                  className="flex items-center gap-2 px-4 py-2 text-white hover:bg-white/10 rounded-full transition-colors relative"
+                >
+                  <Heart className="w-5 h-5" />
+                  <span className="font-medium">Wishlist</span>
+                  {wishlistCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                      {wishlistCount > 99 ? '99+' : wishlistCount}
+                    </span>
+                  )}
+                </button>
                 <button
                   onClick={handleAccountClick}
                   className="flex items-center gap-2 px-4 py-2 text-white hover:bg-white/10 rounded-full transition-colors"
