@@ -5,17 +5,27 @@ const getProducts = asyncHandler(async (req, res) => {
   const pageSize = 10;
   const page = Number(req.query.pageNumber) || 1;
 
-  const keyword = req.query.keyword
-    ? {
-        name: {
-          $regex: req.query.keyword,
-          $options: 'i',
-        },
-      }
-    : {};
+  // Build query
+  let query = {};
 
-  const count = await Product.countDocuments({ ...keyword });
-  const products = await Product.find({ ...keyword })
+  // Keyword search
+  if (req.query.keyword) {
+    query.$or = [
+      { name: { $regex: req.query.keyword, $options: 'i' } },
+      { description: { $regex: req.query.keyword, $options: 'i' } }
+    ];
+  }
+
+  // Filter by category ID if provided
+  if (req.query.categoryId) {
+    query.categoryId = req.query.categoryId;
+  }
+
+  // Only show active products
+  query.isActive = true;
+
+  const count = await Product.countDocuments(query);
+  const products = await Product.find(query)
     .limit(pageSize)
     .skip(pageSize * (page - 1));
 
