@@ -3,13 +3,14 @@ import { useSelector, useDispatch } from "react-redux";
 import ButtonMinimalist from "../Micro/ButtonMinimalist.jsx";
 import AuthModal from "../Auth/AuthModal.jsx";
 import CartModal from "../Cart/CartModal.jsx";
+import MobileNav from "./MobileNav.jsx";
 import { logout } from "../../features/auth/authSlice.jsx";
 
 
 const Header = () => {
   const dispatch = useDispatch();
   const totalQuantity = useSelector((state) => state.cart.totalQuantity);
-  const { user, isAuthenticated } = useSelector((state) => state.auth);
+  const { isAuthenticated } = useSelector((state) => state.auth);
 
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showCartModal, setShowCartModal] = useState(false);
@@ -26,13 +27,24 @@ const Header = () => {
 
   return (
     <>
-      <div className="fixed top-0 left-0 w-full z-50 flex align-center items-center px-10 py-8 h-[10vw] place-content-between">
-        <div className="flex justify-self-start gap-2 align-center">
+      {/* Mobile Navigation */}
+      <MobileNav />
+
+      {/* Desktop Header */}
+      <div className="fixed top-0 left-0 w-full z-50 flex items-center px-4 lg:px-10 py-4 lg:py-8 h-16 lg:h-[10vw] justify-between">
+        {/* Left Navigation - Desktop Only */}
+        <div className="hidden lg:flex gap-2 items-center">
           <ButtonMinimalist title="Shop" to="/shop"/>
           <ButtonMinimalist title="About" />
           <ButtonMinimalist title="Lookbook" />
         </div>
 
+        {/* Logo - Mobile (centered) & Desktop (hidden, shown elsewhere) */}
+        <div className="lg:hidden flex-1 text-center">
+          <span className="text-xl font-bold text-white">CURATE</span>
+        </div>
+
+        {/* Right Navigation */}
         <div className="flex gap-2 items-center">
           {isAuthenticated ? (
             <>
@@ -40,18 +52,22 @@ const Header = () => {
                 title={`Bag/${totalQuantity}`} 
                 onClick={() => setShowCartModal(true)}
               />
-              <ButtonMinimalist title="Logout" onClick={handleLogout} />
+              <div className="hidden lg:block">
+                <ButtonMinimalist title="Logout" onClick={handleLogout} />
+              </div>
             </>
           ) : (
             <>
-              <ButtonMinimalist
-                title="Login"
-                onClick={() => handleAuthClick("login")}
-              />
-              <ButtonMinimalist
-                title="Sign Up"
-                onClick={() => handleAuthClick("register")}
-              />
+              <div className="hidden lg:flex gap-2">
+                <ButtonMinimalist
+                  title="Login"
+                  onClick={() => handleAuthClick("login")}
+                />
+                <ButtonMinimalist
+                  title="Sign Up"
+                  onClick={() => handleAuthClick("register")}
+                />
+              </div>
 
               <ButtonMinimalist 
                 title={`Bag/${totalQuantity}`} 
