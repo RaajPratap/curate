@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
+import serverless from 'serverless-http';
 
 import connectDB from '../config/db.js';
 import authRoutes from '../routes/authRoutes.js';
@@ -15,8 +16,12 @@ import { notFound, errorHandler } from '../middleware/errorMiddleware.js';
 // Load env vars
 dotenv.config();
 
-// Connect to database
-connectDB();
+// Connect to database (only connect once per cold start)
+let isConnected = false;
+if (!isConnected) {
+  connectDB();
+  isConnected = true;
+}
 
 const app = express();
 
@@ -85,4 +90,8 @@ app.get('/', (req, res) => {
 app.use(notFound);
 app.use(errorHandler);
 
+// Export the Express app for local development
 export default app;
+
+// Export serverless handler for Vercel
+export const handler = serverless(app);
