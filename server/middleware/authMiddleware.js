@@ -15,10 +15,21 @@ const protect = async (req, res, next) => {
 
       req.user = await User.findById(decoded.id).select('-password');
 
+      if (!req.user) {
+        res.status(401);
+        throw new Error('User not found');
+      }
+
+      // Check if account is active (skip for admin users)
+      if (!req.user.isAdmin && req.user.isActive === false) {
+        res.status(401);
+        throw new Error('Account has been disabled. Please contact support.');
+      }
+
       next();
     } catch (error) {
       console.error(error);
-      res.status(401).json({ message: 'Not authorized, token failed' });
+      res.status(401).json({ message: error.message || 'Not authorized, token failed' });
     }
   } else {
     res.status(401).json({ message: 'Not authorized, no token' });

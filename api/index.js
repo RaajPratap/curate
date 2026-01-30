@@ -13,6 +13,7 @@ import productRoutes from '../server/routes/productRoutes.js';
 import orderRoutes from '../server/routes/orderRoutes.js';
 import paymentRoutes from '../server/routes/paymentRoutes.js';
 import wishlistRoutes from '../server/routes/wishlistRoutes.js';
+import adminRoutes from '../server/routes/adminRoutes.js';
 import { notFound, errorHandler } from '../server/middleware/errorMiddleware.js';
 
 // Load env vars
@@ -65,6 +66,7 @@ app.use('/products', productRoutes);
 app.use('/orders', orderRoutes);
 app.use('/payments', paymentRoutes);
 app.use('/wishlist', wishlistRoutes);
+app.use('/admin', adminRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

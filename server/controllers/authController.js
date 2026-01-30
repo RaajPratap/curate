@@ -24,6 +24,7 @@ const registerUser = asyncHandler(async (req, res) => {
       name: user.name,
       email: user.email,
       isAdmin: user.isAdmin,
+      isActive: user.isActive,
       token: generateToken(user._id),
     });
   } else {
@@ -38,11 +39,18 @@ const authUser = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email });
 
   if (user && (await user.matchPassword(password))) {
+    // Check if account is active (skip for admin users)
+    if (!user.isAdmin && user.isActive === false) {
+      res.status(401);
+      throw new Error('Account has been disabled. Please contact support.');
+    }
+
     res.json({
       _id: user._id,
       name: user.name,
       email: user.email,
       isAdmin: user.isAdmin,
+      isActive: user.isActive,
       token: generateToken(user._id),
     });
   } else {

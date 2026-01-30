@@ -202,3 +202,38 @@ export const wishlistAPI = {
       body: JSON.stringify({ productId }),
     }),
 };
+
+// Admin API
+export const adminAPI = {
+  getDashboardStats: () => apiRequest('/admin/dashboard/stats'),
+
+  getRecentActivity: (limit = 10) =>
+    apiRequest(`/admin/dashboard/activity?limit=${limit}`),
+
+  getAllUsers: () => apiRequest('/admin/users'),
+
+  getUserById: (id) => apiRequest(`/admin/users/${id}`),
+
+  updateUser: (id, userData) =>
+    apiRequest(`/admin/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(userData),
+    }),
+
+  deleteUser: (id) =>
+    apiRequest(`/admin/users/${id}`, {
+      method: 'DELETE',
+    }),
+
+  toggleUserAdmin: (id) =>
+    apiRequest(`/admin/users/${id}/toggle-admin`, {
+      method: 'PUT',
+    }),
+
+  toggleUserActive: (id) =>
+    apiRequest(`/admin/users/${id}/toggle-active`, {
+      method: 'PUT',
+    }),
+
+  getAllOrders: () => apiRequest('/admin/orders'),
+};

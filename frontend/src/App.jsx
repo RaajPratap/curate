@@ -5,6 +5,7 @@ import ShopPage from './Components/Screen/ShopPage.jsx';
 import ProductDetailPage from './Components/Screen/ProductDetailPage.jsx';
 import CheckoutPage from './Components/Checkout/CheckoutPage.jsx';
 import OrderConfirmation from './Components/Checkout/OrderConfirmation.jsx';
+import ProtectedAdminRoute from './Components/UI/ProtectedAdminRoute.jsx';
 import {
   AccountLayout,
   AccountPage,
@@ -12,6 +13,13 @@ import {
   OrderDetailPage,
   AddressBook,
 } from './Components/Account/index.js';
+import {
+  AdminLayout,
+  AdminDashboard,
+  ProductsManager,
+  OrdersManager,
+  UsersManager,
+} from './Components/Admin/index.js';
 import { WishlistPage } from './Components/Wishlist/index.js';
 
 function App() {
@@ -36,6 +44,16 @@ function App() {
 
           {/* Wishlist Route */}
           <Route path="/wishlist" element={<WishlistPage />} />
+
+          {/* Admin Routes - Protected */}
+          <Route element={<ProtectedAdminRoute />}>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="products" element={<ProductsManager />} />
+              <Route path="orders" element={<OrdersManager />} />
+              <Route path="users" element={<UsersManager />} />
+            </Route>
+          </Route>
         </Routes>
       </Router>
     </StripeProvider>
