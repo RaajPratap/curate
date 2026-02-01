@@ -16,6 +16,8 @@
     "dev:auth": "turbo dev --filter=auth-service",
     "dev:products": "turbo dev --filter=products-service",
     "dev:orders": "turbo dev --filter=orders-service",
+    "dev:gateway": "turbo dev --filter=gateway",
+    "dev:services": "turbo dev --filter=auth-service --filter=products-service --filter=orders-service --filter=gateway",
     "build:web": "turbo build --filter=web",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\""
   },
