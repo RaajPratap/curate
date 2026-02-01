@@ -77,6 +77,14 @@ const orderSchema = new mongoose.Schema({
       enum: ['pending', 'paid', 'failed', 'refunded'],
       default: 'pending',
     },
+    // Razorpay fields
+    razorpayOrderId: String,
+    razorpayPaymentId: String,
+    razorpaySignature: String,
+    refundId: String,
+    refundedAt: Date,
+    failureReason: String,
+    // Legacy Stripe field (kept for compatibility)
     stripePaymentIntentId: String,
     paidAt: Date,
   },

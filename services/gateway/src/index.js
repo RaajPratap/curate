@@ -124,6 +124,11 @@ app.use('/api/cart', createProxyMiddleware(createProxyOptions(SERVICES.orders, {
   '^/api/cart': '/api/cart',
 })));
 
+// Payments Routes (part of orders service)
+app.use('/api/payments', createProxyMiddleware(createProxyOptions(SERVICES.orders, {
+  '^/api/payments': '/api/payments',
+})));
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({
