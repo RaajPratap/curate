@@ -200,6 +200,11 @@ export default function CheckoutPage() {
       setOrderId(response.data.order._id);
       setOrderNumber(response.data.order.orderNumber);
 
+      // Store guest email for order confirmation page
+      if (typeof window !== "undefined") {
+        localStorage.setItem("lastOrderEmail", address.email);
+      }
+
       // For COD orders, redirect immediately
       if (selectedPayment === "cod") {
         dispatch(clearCart());

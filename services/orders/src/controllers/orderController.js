@@ -1,5 +1,5 @@
-const Order = require('../models/Order');
-const Cart = require('../models/Cart');
+const Order = require("../models/Order");
+const Cart = require("../models/Cart");
 
 // Generate unique order number
 const generateOrderNumber = () => {
@@ -9,15 +9,15 @@ const generateOrderNumber = () => {
 };
 
 // Calculate shipping cost (free over 2999 INR)
-const calculateShipping = (subtotal, method = 'standard') => {
+const calculateShipping = (subtotal, method = "standard") => {
   if (subtotal >= 2999) return 0;
-  
+
   const rates = {
     standard: 99,
     express: 199,
     overnight: 399,
   };
-  
+
   return rates[method] || rates.standard;
 };
 
@@ -40,14 +40,14 @@ exports.createOrder = async (req, res) => {
       customerNote,
     } = req.body;
 
-    // Find cart
+    // Find cart - don't populate since Product model is in a different service
     const query = userId ? { user: userId } : { sessionId };
-    const cart = await Cart.findOne(query).populate('items.product');
+    const cart = await Cart.findOne(query);
 
     if (!cart || cart.items.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Cart is empty',
+        message: "Cart is empty",
       });
     }
 
@@ -57,21 +57,27 @@ exports.createOrder = async (req, res) => {
     const tax = calculateTax(subtotal);
     const total = subtotal + shippingCost + tax;
 
-    // Map cart items to order items
-    const items = cart.items.map(item => ({
-      product: item.product._id || item.product,
+    // Map cart items to order items (cart items already have name, price, image)
+    const items = cart.items.map((item) => ({
+      product: item.product,
       variant: item.variant,
       name: item.name,
       image: item.image,
       price: item.price,
       quantity: item.quantity,
-      sku: `${item.product.slug || 'PROD'}-${item.variant?.size || 'OS'}-${item.variant?.color || 'DEF'}`.toUpperCase(),
+      sku: `PROD-${item.variant?.size || "OS"}-${item.variant?.color || "DEF"}`.toUpperCase(),
     }));
 
     // Calculate sustainability impact
     const sustainabilityImpact = {
-      totalCarbonFootprint: items.reduce((acc, item) => acc + (item.quantity * 2.5), 0), // kg CO2
-      carbonSavedVsConventional: items.reduce((acc, item) => acc + (item.quantity * 5.2), 0), // kg CO2 saved
+      totalCarbonFootprint: items.reduce(
+        (acc, item) => acc + item.quantity * 2.5,
+        0,
+      ), // kg CO2
+      carbonSavedVsConventional: items.reduce(
+        (acc, item) => acc + item.quantity * 5.2,
+        0,
+      ), // kg CO2 saved
     };
 
     // Create order
@@ -84,20 +90,20 @@ exports.createOrder = async (req, res) => {
       shippingCost,
       tax,
       total,
-      currency: 'INR',
+      currency: "INR",
       shippingAddress,
-      billingAddress: billingAddress?.sameAsShipping 
+      billingAddress: billingAddress?.sameAsShipping
         ? { ...shippingAddress, sameAsShipping: true }
         : billingAddress,
       payment: {
         method: paymentMethod,
-        status: 'pending',
+        status: "pending",
       },
       shipping: {
-        method: shippingMethod || 'standard',
+        method: shippingMethod || "standard",
         estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
       },
-      status: 'pending',
+      status: "pending",
       sustainabilityImpact,
       customerNote,
     });
@@ -109,14 +115,14 @@ exports.createOrder = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Order created successfully',
+      message: "Order created successfully",
       data: { order },
     });
   } catch (error) {
-    console.error('Create order error:', error);
+    console.error("Create order error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to create order',
+      message: "Failed to create order",
     });
   }
 };
@@ -130,7 +136,7 @@ exports.getOrders = async (req, res) => {
     if (!userId) {
       return res.status(400).json({
         success: false,
-        message: 'User ID is required',
+        message: "User ID is required",
       });
     }
 
@@ -159,10 +165,10 @@ exports.getOrders = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Get orders error:', error);
+    console.error("Get orders error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to get orders',
+      message: "Failed to get orders",
     });
   }
 };
@@ -178,7 +184,7 @@ exports.getOrderById = async (req, res) => {
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: 'Order not found',
+        message: "Order not found",
       });
     }
 
@@ -186,7 +192,7 @@ exports.getOrderById = async (req, res) => {
     if (userId && order.user?.toString() !== userId) {
       return res.status(403).json({
         success: false,
-        message: 'Not authorized to view this order',
+        message: "Not authorized to view this order",
       });
     }
 
@@ -195,10 +201,10 @@ exports.getOrderById = async (req, res) => {
       data: { order },
     });
   } catch (error) {
-    console.error('Get order error:', error);
+    console.error("Get order error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to get order',
+      message: "Failed to get order",
     });
   }
 };
@@ -214,7 +220,7 @@ exports.getOrderByNumber = async (req, res) => {
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: 'Order not found',
+        message: "Order not found",
       });
     }
 
@@ -222,7 +228,7 @@ exports.getOrderByNumber = async (req, res) => {
     if (order.guestEmail && email !== order.guestEmail) {
       return res.status(403).json({
         success: false,
-        message: 'Email does not match order',
+        message: "Email does not match order",
       });
     }
 
@@ -231,10 +237,10 @@ exports.getOrderByNumber = async (req, res) => {
       data: { order },
     });
   } catch (error) {
-    console.error('Get order by number error:', error);
+    console.error("Get order by number error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to get order',
+      message: "Failed to get order",
     });
   }
 };
@@ -250,17 +256,17 @@ exports.updateOrderStatus = async (req, res) => {
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: 'Order not found',
+        message: "Order not found",
       });
     }
 
     // Validate status transition
     const validTransitions = {
-      pending: ['confirmed', 'cancelled'],
-      confirmed: ['processing', 'cancelled'],
-      processing: ['shipped', 'cancelled'],
-      shipped: ['delivered', 'returned'],
-      delivered: ['returned'],
+      pending: ["confirmed", "cancelled"],
+      confirmed: ["processing", "cancelled"],
+      processing: ["shipped", "cancelled"],
+      shipped: ["delivered", "returned"],
+      delivered: ["returned"],
       cancelled: [],
       returned: [],
     };
@@ -281,13 +287,13 @@ exports.updateOrderStatus = async (req, res) => {
     }
 
     // Update shipping info if provided
-    if (status === 'shipped') {
+    if (status === "shipped") {
       order.shipping.shippedAt = new Date();
       if (trackingNumber) order.shipping.trackingNumber = trackingNumber;
       if (trackingUrl) order.shipping.trackingUrl = trackingUrl;
     }
 
-    if (status === 'delivered') {
+    if (status === "delivered") {
       order.shipping.deliveredAt = new Date();
     }
 
@@ -295,14 +301,14 @@ exports.updateOrderStatus = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Order status updated',
+      message: "Order status updated",
       data: { order },
     });
   } catch (error) {
-    console.error('Update order status error:', error);
+    console.error("Update order status error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to update order status',
+      message: "Failed to update order status",
     });
   }
 };
@@ -318,7 +324,7 @@ exports.cancelOrder = async (req, res) => {
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: 'Order not found',
+        message: "Order not found",
       });
     }
 
@@ -326,12 +332,12 @@ exports.cancelOrder = async (req, res) => {
     if (userId && order.user?.toString() !== userId) {
       return res.status(403).json({
         success: false,
-        message: 'Not authorized to cancel this order',
+        message: "Not authorized to cancel this order",
       });
     }
 
     // Check if order can be cancelled
-    const cancellableStatuses = ['pending', 'confirmed', 'processing'];
+    const cancellableStatuses = ["pending", "confirmed", "processing"];
     if (!cancellableStatuses.includes(order.status)) {
       return res.status(400).json({
         success: false,
@@ -339,21 +345,23 @@ exports.cancelOrder = async (req, res) => {
       });
     }
 
-    order.status = 'cancelled';
-    order.internalNote = reason ? `Cancelled by user: ${reason}` : 'Cancelled by user';
+    order.status = "cancelled";
+    order.internalNote = reason
+      ? `Cancelled by user: ${reason}`
+      : "Cancelled by user";
 
     await order.save();
 
     res.json({
       success: true,
-      message: 'Order cancelled successfully',
+      message: "Order cancelled successfully",
       data: { order },
     });
   } catch (error) {
-    console.error('Cancel order error:', error);
+    console.error("Cancel order error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to cancel order',
+      message: "Failed to cancel order",
     });
   }
 };
@@ -369,21 +377,21 @@ exports.updatePaymentStatus = async (req, res) => {
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: 'Order not found',
+        message: "Order not found",
       });
     }
 
     order.payment.status = status;
-    
+
     if (stripePaymentIntentId) {
       order.payment.stripePaymentIntentId = stripePaymentIntentId;
     }
 
-    if (status === 'paid') {
+    if (status === "paid") {
       order.payment.paidAt = new Date();
       // Auto-confirm order when paid
-      if (order.status === 'pending') {
-        order.status = 'confirmed';
+      if (order.status === "pending") {
+        order.status = "confirmed";
       }
     }
 
@@ -391,14 +399,14 @@ exports.updatePaymentStatus = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Payment status updated',
+      message: "Payment status updated",
       data: { order },
     });
   } catch (error) {
-    console.error('Update payment status error:', error);
+    console.error("Update payment status error:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to update payment status',
+      message: "Failed to update payment status",
     });
   }
 };

@@ -92,10 +92,24 @@ export default function OrderConfirmationPage() {
       try {
         setIsLoading(true);
         setError(null);
-        const response = await ordersService.getOrderByNumber(orderNumber);
+
+        // Get stored email for guest orders
+        const storedEmail =
+          typeof window !== "undefined"
+            ? localStorage.getItem("lastOrderEmail")
+            : null;
+
+        const response = await ordersService.getOrderByNumber(
+          orderNumber,
+          storedEmail || undefined,
+        );
 
         if (response.success && response.data?.order) {
           setOrder(transformOrder(response.data.order));
+          // Clear the stored email after successful fetch
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("lastOrderEmail");
+          }
         } else {
           setError("Order not found");
         }

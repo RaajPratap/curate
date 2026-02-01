@@ -6,7 +6,9 @@ exports.getCart = async (req, res) => {
     const { userId, sessionId } = req.query;
 
     const query = userId ? { user: userId } : { sessionId };
-    let cart = await Cart.findOne(query).populate("items.product");
+    // Don't populate product since Product model is in a different service
+    // Cart items already contain name, price, image from when they were added
+    let cart = await Cart.findOne(query);
 
     if (!cart) {
       cart = { items: [], subtotal: 0 };
