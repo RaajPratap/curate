@@ -1,0 +1,245 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 10 10 10;
+    --foreground: 255 255 255;
+    --accent: 204 255 0;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Custom scrollbar - Brutalist style */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-background-secondary;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-accent;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-accent/80;
+  }
+
+  /* Selection */
+  ::selection {
+    @apply bg-accent text-black;
+  }
+
+  /* Focus styles */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-background;
+  }
+}
+
+@layer components {
+  /* Brutalist Button Base */
+  .btn {
+    @apply inline-flex items-center justify-center font-mono font-bold uppercase tracking-wider transition-all duration-100;
+    @apply border-2 px-6 py-3;
+  }
+
+  .btn-primary {
+    @apply btn bg-accent text-black border-accent;
+    @apply hover:bg-transparent hover:text-accent;
+    @apply active:translate-x-[2px] active:translate-y-[2px];
+  }
+
+  .btn-secondary {
+    @apply btn bg-transparent text-white border-border;
+    @apply hover:border-white;
+    @apply active:translate-x-[2px] active:translate-y-[2px];
+  }
+
+  .btn-brutal {
+    @apply btn bg-accent text-black border-black shadow-brutal;
+    @apply hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-brutal-sm;
+    @apply active:translate-x-[4px] active:translate-y-[4px] active:shadow-none;
+  }
+
+  /* Card styles */
+  .card {
+    @apply bg-background-secondary border border-border;
+  }
+
+  .card-brutal {
+    @apply bg-background-secondary border-2 border-white shadow-brutal-white;
+  }
+
+  /* Input styles */
+  .input {
+    @apply w-full bg-background-tertiary border-2 border-border text-white font-mono;
+    @apply px-4 py-3 placeholder:text-foreground-muted placeholder:uppercase placeholder:text-xs placeholder:tracking-wider;
+    @apply focus:border-accent focus:ring-1 focus:ring-accent;
+  }
+
+  /* Label styles */
+  .label {
+    @apply text-xs font-mono uppercase tracking-widest text-foreground-secondary;
+  }
+
+  /* Sustainability badge */
+  .eco-badge {
+    @apply inline-flex items-center gap-1 px-2 py-1 text-xs font-mono uppercase tracking-wider border;
+  }
+
+  .eco-badge-a {
+    @apply eco-badge bg-eco-green/10 text-eco-green border-eco-green;
+  }
+
+  .eco-badge-b {
+    @apply eco-badge bg-eco-green/10 text-eco-green border-eco-green/50;
+  }
+
+  .eco-badge-c {
+    @apply eco-badge bg-eco-yellow/10 text-eco-yellow border-eco-yellow;
+  }
+
+  .eco-badge-d {
+    @apply eco-badge bg-eco-red/10 text-eco-red border-eco-red/50;
+  }
+
+  .eco-badge-f {
+    @apply eco-badge bg-eco-red/10 text-eco-red border-eco-red;
+  }
+
+  /* Grid pattern overlay */
+  .grid-overlay {
+    @apply relative;
+  }
+
+  .grid-overlay::before {
+    content: '';
+    @apply absolute inset-0 pointer-events-none opacity-5;
+    background-image: linear-gradient(to right, #333 1px, transparent 1px),
+                      linear-gradient(to bottom, #333 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  /* Glitch text effect */
+  .glitch {
+    @apply relative;
+  }
+
+  .glitch::before,
+  .glitch::after {
+    content: attr(data-text);
+    @apply absolute top-0 left-0 w-full h-full;
+  }
+
+  .glitch::before {
+    @apply text-accent-secondary;
+    animation: glitch-1 0.3s infinite;
+    clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+  }
+
+  .glitch::after {
+    @apply text-accent-tertiary;
+    animation: glitch-2 0.3s infinite;
+    clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%);
+  }
+
+  /* Marquee */
+  .marquee {
+    @apply overflow-hidden whitespace-nowrap;
+  }
+
+  .marquee-content {
+    @apply inline-block animate-marquee;
+  }
+
+  /* Product card hover effect */
+  .product-card {
+    @apply relative overflow-hidden transition-all duration-200;
+  }
+
+  .product-card:hover {
+    @apply border-accent;
+  }
+
+  .product-card:hover .product-card-overlay {
+    @apply opacity-100;
+  }
+
+  .product-card-overlay {
+    @apply absolute inset-0 bg-black/60 opacity-0 transition-opacity duration-200;
+    @apply flex items-center justify-center;
+  }
+}
+
+@layer utilities {
+  /* Text stroke for brutalist typography */
+  .text-stroke {
+    -webkit-text-stroke: 1px currentColor;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .text-stroke-white {
+    -webkit-text-stroke: 1px white;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .text-stroke-accent {
+    -webkit-text-stroke: 1px #CCFF00;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Clip paths for brutalist shapes */
+  .clip-brutal {
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%);
+  }
+
+  /* Noise texture overlay */
+  .noise {
+    @apply relative;
+  }
+
+  .noise::after {
+    content: '';
+    @apply absolute inset-0 pointer-events-none opacity-[0.03];
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  }
+}
+
+/* Animations */
+@keyframes glitch-1 {
+  0%, 100% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+}
+
+@keyframes glitch-2 {
+  0%, 100% { transform: translate(0); }
+  20% { transform: translate(2px, -2px); }
+  40% { transform: translate(2px, 2px); }
+  60% { transform: translate(-2px, -2px); }
+  80% { transform: translate(-2px, 2px); }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
