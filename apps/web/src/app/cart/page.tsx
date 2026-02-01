@@ -1,40 +1,65 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
-import { Header } from '@/components/layout/Header'
-import { Footer } from '@/components/layout/Footer'
-import { Container } from '@/components/layout/Container'
-import { CartItem, CartSummary } from '@/components/cart'
-import { Button } from '@/components/ui'
-import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import Link from "next/link";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
+import { Container } from "@/components/layout/Container";
+import { CartItem, CartSummary } from "@/components/cart";
+import { Button } from "@/components/ui";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
   selectCartItems,
   selectCartCount,
   selectCartTotal,
   selectCartCarbonFootprint,
-  updateQuantity,
-  removeFromCart,
-  clearCart,
-} from '@/store/slices/cartSlice'
+  updateQuantityAsync,
+  removeFromCartAsync,
+  clearCartAsync,
+} from "@/store/slices/cartSlice";
 
 export default function CartPage() {
-  const dispatch = useAppDispatch()
-  const items = useAppSelector(selectCartItems)
-  const cartCount = useAppSelector(selectCartCount)
-  const subtotal = useAppSelector(selectCartTotal)
-  const carbonFootprint = useAppSelector(selectCartCarbonFootprint)
+  const dispatch = useAppDispatch();
+  const items = useAppSelector(selectCartItems);
+  const cartCount = useAppSelector(selectCartCount);
+  const subtotal = useAppSelector(selectCartTotal);
+  const carbonFootprint = useAppSelector(selectCartCarbonFootprint);
 
-  const handleUpdateQuantity = (productId: string, size: string, quantity: number) => {
-    dispatch(updateQuantity({ productId, size, quantity }))
-  }
+  const handleUpdateQuantity = (
+    productId: string,
+    size: string,
+    quantity: number,
+  ) => {
+    // Find the item to get its backend ID
+    const item = items.find(
+      (i) => i.product.id === productId && i.size === size,
+    );
+    dispatch(
+      updateQuantityAsync({
+        productId,
+        size,
+        quantity,
+        backendItemId: item?.backendItemId,
+      }),
+    );
+  };
 
   const handleRemove = (productId: string, size: string) => {
-    dispatch(removeFromCart({ productId, size }))
-  }
+    // Find the item to get its backend ID
+    const item = items.find(
+      (i) => i.product.id === productId && i.size === size,
+    );
+    dispatch(
+      removeFromCartAsync({
+        productId,
+        size,
+        backendItemId: item?.backendItemId,
+      }),
+    );
+  };
 
   const handleClearCart = () => {
-    dispatch(clearCart())
-  }
+    dispatch(clearCartAsync());
+  };
 
   return (
     <main className="min-h-screen">
@@ -47,7 +72,7 @@ export default function CartPage() {
             YOUR CART
           </h1>
           <p className="font-mono text-foreground-muted text-sm uppercase tracking-wider">
-            {cartCount} {cartCount === 1 ? 'Item' : 'Items'}
+            {cartCount} {cartCount === 1 ? "Item" : "Items"}
           </p>
         </Container>
       </section>
@@ -59,8 +84,17 @@ export default function CartPage() {
             /* Empty Cart */
             <div className="text-center py-16">
               <div className="w-24 h-24 border-2 border-border flex items-center justify-center mx-auto mb-6">
-                <svg className="w-12 h-12 text-foreground-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="square" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                <svg
+                  className="w-12 h-12 text-foreground-muted"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="square"
+                    strokeWidth={2}
+                    d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+                  />
                 </svg>
               </div>
               <h2 className="font-display text-2xl font-bold tracking-tighter mb-2">
@@ -125,5 +159,5 @@ export default function CartPage() {
 
       <Footer />
     </main>
-  )
+  );
 }

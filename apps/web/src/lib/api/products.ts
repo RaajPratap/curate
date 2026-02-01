@@ -57,12 +57,14 @@ function transformProduct(backendProduct: BackendProduct): Product {
   } = backendProduct;
 
   // Extract unique colors from variants
-  const colors = [
-    ...new Set(variants.map((v) => v.color?.name).filter(Boolean)),
-  ];
+  const colors = Array.from(
+    new Set(variants.map((v) => v.color?.name).filter(Boolean)),
+  ) as string[];
 
   // Extract unique sizes from variants
-  const sizes = [...new Set(variants.map((v) => v.size).filter(Boolean))];
+  const sizes = Array.from(
+    new Set(variants.map((v) => v.size).filter(Boolean)),
+  ) as string[];
 
   // Calculate total stock
   const totalStock = variants.reduce((sum, v) => sum + (v.stock || 0), 0);

@@ -1,126 +1,139 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Header } from '@/components/layout/Header'
-import { Footer } from '@/components/layout/Footer'
-import { Container } from '@/components/layout/Container'
-import { Button, Card, CardContent, Badge, Input } from '@/components/ui'
-import { RazorpayButton } from '@/components/payment'
-import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
+import { Container } from "@/components/layout/Container";
+import { Button, Card, CardContent, Badge, Input } from "@/components/ui";
+import { RazorpayButton } from "@/components/payment";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
   selectCartItems,
   selectCartCount,
   selectCartTotal,
   selectCartCarbonFootprint,
   clearCart,
-} from '@/store/slices/cartSlice'
-import { formatPrice } from '@/lib/utils'
+  clearCartAsync,
+} from "@/store/slices/cartSlice";
+import { formatPrice } from "@/lib/utils";
+import { ordersService } from "@/lib/api/orders";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
-type CheckoutStep = 'information' | 'shipping' | 'payment'
+type CheckoutStep = "information" | "shipping" | "payment";
 
 interface ShippingAddress {
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  address: string
-  apartment: string
-  city: string
-  state: string
-  pincode: string
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address: string;
+  apartment: string;
+  city: string;
+  state: string;
+  pincode: string;
 }
 
 interface ShippingMethod {
-  id: string
-  name: string
-  description: string
-  price: number
-  estimatedDays: string
-  carbonNeutral: boolean
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  estimatedDays: string;
+  carbonNeutral: boolean;
 }
 
 const shippingMethods: ShippingMethod[] = [
   {
-    id: 'standard',
-    name: 'Standard Shipping',
-    description: 'Carbon neutral delivery',
+    id: "standard",
+    name: "Standard Shipping",
+    description: "Carbon neutral delivery",
     price: 199,
-    estimatedDays: '5-7 business days',
+    estimatedDays: "5-7 business days",
     carbonNeutral: true,
   },
   {
-    id: 'express',
-    name: 'Express Shipping',
-    description: 'Fast delivery with carbon offset',
+    id: "express",
+    name: "Express Shipping",
+    description: "Fast delivery with carbon offset",
     price: 399,
-    estimatedDays: '2-3 business days',
+    estimatedDays: "2-3 business days",
     carbonNeutral: true,
   },
   {
-    id: 'free',
-    name: 'Eco Shipping',
-    description: 'Free on orders over ₹2,999',
+    id: "free",
+    name: "Eco Shipping",
+    description: "Free on orders over ₹2,999",
     price: 0,
-    estimatedDays: '7-10 business days',
+    estimatedDays: "7-10 business days",
     carbonNeutral: true,
   },
-]
+];
 
 const paymentMethods = [
-  { id: 'razorpay', name: 'Pay with Razorpay', icon: '💳', description: 'Cards, UPI, Net Banking, Wallets' },
-  { id: 'cod', name: 'Cash on Delivery', icon: '💵', description: '+₹50 COD charges' },
-]
+  {
+    id: "razorpay",
+    name: "Pay with Razorpay",
+    icon: "💳",
+    description: "Cards, UPI, Net Banking, Wallets",
+  },
+  {
+    id: "cod",
+    name: "Cash on Delivery",
+    icon: "💵",
+    description: "+₹50 COD charges",
+  },
+];
 
 export default function CheckoutPage() {
-  const router = useRouter()
-  const dispatch = useAppDispatch()
-  const cartItems = useAppSelector(selectCartItems)
-  const cartCount = useAppSelector(selectCartCount)
-  const cartTotal = useAppSelector(selectCartTotal)
-  const carbonFootprint = useAppSelector(selectCartCarbonFootprint)
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const cartItems = useAppSelector(selectCartItems);
+  const cartCount = useAppSelector(selectCartCount);
+  const cartTotal = useAppSelector(selectCartTotal);
+  const carbonFootprint = useAppSelector(selectCartCarbonFootprint);
 
-  const [currentStep, setCurrentStep] = useState<CheckoutStep>('information')
-  const [isProcessing, setIsProcessing] = useState(false)
+  const [currentStep, setCurrentStep] = useState<CheckoutStep>("information");
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const [address, setAddress] = useState<ShippingAddress>({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    address: '',
-    apartment: '',
-    city: '',
-    state: '',
-    pincode: '',
-  })
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    address: "",
+    apartment: "",
+    city: "",
+    state: "",
+    pincode: "",
+  });
 
-  const [selectedShipping, setSelectedShipping] = useState<string>('standard')
-  const [selectedPayment, setSelectedPayment] = useState<string>('razorpay')
-  const [saveInfo, setSaveInfo] = useState(true)
-  const [orderId, setOrderId] = useState<string | null>(null)
-  const [orderNumber, setOrderNumber] = useState<string | null>(null)
-  const [paymentError, setPaymentError] = useState<string | null>(null)
+  const [selectedShipping, setSelectedShipping] = useState<string>("standard");
+  const [selectedPayment, setSelectedPayment] = useState<string>("razorpay");
+  const [saveInfo, setSaveInfo] = useState(true);
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
-  const shippingCost = cartTotal >= 2999 
-    ? 0 
-    : shippingMethods.find(m => m.id === selectedShipping)?.price || 199
-  const codCharges = selectedPayment === 'cod' ? 50 : 0
-  const total = cartTotal + shippingCost + codCharges
+  const shippingCost =
+    cartTotal >= 2999
+      ? 0
+      : shippingMethods.find((m) => m.id === selectedShipping)?.price || 199;
+  const codCharges = selectedPayment === "cod" ? 50 : 0;
+  const total = cartTotal + shippingCost + codCharges;
 
   const steps: { id: CheckoutStep; label: string; number: number }[] = [
-    { id: 'information', label: 'Information', number: 1 },
-    { id: 'shipping', label: 'Shipping', number: 2 },
-    { id: 'payment', label: 'Payment', number: 3 },
-  ]
+    { id: "information", label: "Information", number: 1 },
+    { id: "shipping", label: "Shipping", number: 2 },
+    { id: "payment", label: "Payment", number: 3 },
+  ];
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setAddress((prev) => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setAddress((prev) => ({ ...prev, [name]: value }));
+  };
 
   const validateInformation = () => {
     return (
@@ -132,32 +145,38 @@ export default function CheckoutPage() {
       address.city &&
       address.state &&
       address.pincode
-    )
-  }
+    );
+  };
 
   const handleContinue = () => {
-    if (currentStep === 'information' && validateInformation()) {
-      setCurrentStep('shipping')
-    } else if (currentStep === 'shipping') {
-      setCurrentStep('payment')
+    if (currentStep === "information" && validateInformation()) {
+      setCurrentStep("shipping");
+    } else if (currentStep === "shipping") {
+      setCurrentStep("payment");
     }
-  }
+  };
 
   const handlePlaceOrder = async () => {
-    setIsProcessing(true)
-    setPaymentError(null)
+    setIsProcessing(true);
+    setPaymentError(null);
 
     try {
-      // Create order in backend
-      const orderData = {
-        items: cartItems.map(item => ({
-          productId: item.product.id,
-          name: item.product.name,
-          price: item.product.price,
-          quantity: item.quantity,
-          variant: { size: item.size, color: item.color || 'Default' },
-          image: item.product.images?.[0] || '/placeholder.jpg',
-        })),
+      // Step 1: Sync cart to backend - add all items
+      console.log("Syncing cart to backend...");
+      for (const item of cartItems) {
+        await ordersService.addToCart(
+          item.product.id,
+          { size: item.size, color: item.product.colors?.[0] || "Default" },
+          item.quantity,
+          item.product.price,
+          item.product.name,
+          item.product.images?.[0] || "/placeholder.jpg",
+        );
+      }
+
+      // Step 2: Create order using the service
+      console.log("Creating order...");
+      const response = await ordersService.createOrder({
         shippingAddress: {
           firstName: address.firstName,
           lastName: address.lastName,
@@ -166,54 +185,47 @@ export default function CheckoutPage() {
           city: address.city,
           state: address.state,
           zipCode: address.pincode,
-          country: 'India',
+          country: "India",
           phone: address.phone,
         },
-        guestEmail: address.email,
         shippingMethod: selectedShipping,
         paymentMethod: selectedPayment,
+        guestEmail: address.email,
+      });
+
+      if (!response.success) {
+        throw new Error("Failed to create order");
       }
 
-      const response = await fetch(`${API_URL}/api/orders`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderData),
-      })
-
-      const data = await response.json()
-
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to create order')
-      }
-
-      setOrderId(data.data.order._id)
-      setOrderNumber(data.data.order.orderNumber)
+      setOrderId(response.data.order._id);
+      setOrderNumber(response.data.order.orderNumber);
 
       // For COD orders, redirect immediately
-      if (selectedPayment === 'cod') {
-        dispatch(clearCart())
-        router.push(`/order/${data.data.order.orderNumber}`)
+      if (selectedPayment === "cod") {
+        dispatch(clearCart());
+        router.push(`/order/${response.data.order.orderNumber}`);
       }
       // For Razorpay, the button will handle payment
     } catch (error: any) {
-      console.error('Order creation error:', error)
-      setPaymentError(error.message || 'Failed to create order')
+      console.error("Order creation error:", error);
+      setPaymentError(error.message || "Failed to create order");
     } finally {
-      setIsProcessing(false)
+      setIsProcessing(false);
     }
-  }
+  };
 
   const handlePaymentSuccess = () => {
-    dispatch(clearCart())
+    dispatch(clearCart()); // Clear local cart
+    dispatch(clearCartAsync()); // Also clear backend cart
     if (orderNumber) {
-      router.push(`/order/${orderNumber}`)
+      router.push(`/order/${orderNumber}`);
     }
-  }
+  };
 
   const handlePaymentError = (error: any) => {
-    console.error('Payment error:', error)
-    setPaymentError(error.message || 'Payment failed. Please try again.')
-  }
+    console.error("Payment error:", error);
+    setPaymentError(error.message || "Payment failed. Please try again.");
+  };
 
   if (cartItems.length === 0) {
     return (
@@ -236,7 +248,7 @@ export default function CheckoutPage() {
         </section>
         <Footer />
       </main>
-    )
+    );
   }
 
   return (
@@ -249,7 +261,10 @@ export default function CheckoutPage() {
           <nav className="mb-8">
             <ol className="flex items-center gap-2 font-mono text-sm">
               <li>
-                <Link href="/cart" className="text-foreground-muted hover:text-accent transition-colors">
+                <Link
+                  href="/cart"
+                  className="text-foreground-muted hover:text-accent transition-colors"
+                >
                   Cart
                 </Link>
               </li>
@@ -264,24 +279,31 @@ export default function CheckoutPage() {
               <div key={step.id} className="flex items-center">
                 <button
                   onClick={() => {
-                    if (step.id === 'information') setCurrentStep('information')
-                    else if (step.id === 'shipping' && validateInformation()) setCurrentStep('shipping')
-                    else if (step.id === 'payment' && validateInformation()) setCurrentStep('payment')
+                    if (step.id === "information")
+                      setCurrentStep("information");
+                    else if (step.id === "shipping" && validateInformation())
+                      setCurrentStep("shipping");
+                    else if (step.id === "payment" && validateInformation())
+                      setCurrentStep("payment");
                   }}
                   className={`flex items-center gap-2 ${
-                    currentStep === step.id ? 'text-accent' : 'text-foreground-muted'
+                    currentStep === step.id
+                      ? "text-accent"
+                      : "text-foreground-muted"
                   }`}
                 >
                   <span
                     className={`w-8 h-8 flex items-center justify-center font-mono text-sm border ${
                       currentStep === step.id
-                        ? 'border-accent bg-accent text-black'
+                        ? "border-accent bg-accent text-black"
                         : steps.findIndex((s) => s.id === currentStep) > index
-                        ? 'border-accent text-accent'
-                        : 'border-border'
+                          ? "border-accent text-accent"
+                          : "border-border"
                     }`}
                   >
-                    {steps.findIndex((s) => s.id === currentStep) > index ? '✓' : step.number}
+                    {steps.findIndex((s) => s.id === currentStep) > index
+                      ? "✓"
+                      : step.number}
                   </span>
                   <span className="font-mono text-sm uppercase tracking-wider hidden sm:inline">
                     {step.label}
@@ -298,7 +320,7 @@ export default function CheckoutPage() {
             {/* Main Content */}
             <div>
               {/* Information Step */}
-              {currentStep === 'information' && (
+              {currentStep === "information" && (
                 <div className="space-y-8">
                   <div>
                     <h2 className="font-display text-2xl font-bold tracking-tighter mb-6">
@@ -395,7 +417,9 @@ export default function CheckoutPage() {
                       onChange={(e) => setSaveInfo(e.target.checked)}
                       className="w-4 h-4 accent-accent"
                     />
-                    <span className="font-mono text-sm">Save this information for next time</span>
+                    <span className="font-mono text-sm">
+                      Save this information for next time
+                    </span>
                   </label>
 
                   <div className="flex justify-between items-center pt-4">
@@ -417,26 +441,30 @@ export default function CheckoutPage() {
               )}
 
               {/* Shipping Step */}
-              {currentStep === 'shipping' && (
+              {currentStep === "shipping" && (
                 <div className="space-y-8">
                   <div className="border border-border p-4 space-y-2">
                     <div className="flex justify-between">
-                      <span className="font-mono text-sm text-foreground-muted">Contact</span>
+                      <span className="font-mono text-sm text-foreground-muted">
+                        Contact
+                      </span>
                       <span className="font-mono text-sm">{address.email}</span>
                       <button
-                        onClick={() => setCurrentStep('information')}
+                        onClick={() => setCurrentStep("information")}
                         className="font-mono text-sm text-accent"
                       >
                         Change
                       </button>
                     </div>
                     <div className="border-t border-border pt-2 flex justify-between">
-                      <span className="font-mono text-sm text-foreground-muted">Ship to</span>
+                      <span className="font-mono text-sm text-foreground-muted">
+                        Ship to
+                      </span>
                       <span className="font-mono text-sm">
                         {address.address}, {address.city}, {address.pincode}
                       </span>
                       <button
-                        onClick={() => setCurrentStep('information')}
+                        onClick={() => setCurrentStep("information")}
                         className="font-mono text-sm text-accent"
                       >
                         Change
@@ -450,17 +478,19 @@ export default function CheckoutPage() {
                     </h2>
                     <div className="space-y-3">
                       {shippingMethods.map((method) => {
-                        const isFreeEligible = method.id === 'free' && cartTotal >= 2999
-                        const isDisabled = method.id === 'free' && cartTotal < 2999
+                        const isFreeEligible =
+                          method.id === "free" && cartTotal >= 2999;
+                        const isDisabled =
+                          method.id === "free" && cartTotal < 2999;
 
                         return (
                           <label
                             key={method.id}
                             className={`flex items-center justify-between p-4 border cursor-pointer transition-colors ${
                               selectedShipping === method.id
-                                ? 'border-accent bg-accent/5'
-                                : 'border-border hover:border-foreground-muted'
-                            } ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                ? "border-accent bg-accent/5"
+                                : "border-border hover:border-foreground-muted"
+                            } ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
                           >
                             <div className="flex items-center gap-4">
                               <input
@@ -468,7 +498,9 @@ export default function CheckoutPage() {
                                 name="shipping"
                                 value={method.id}
                                 checked={selectedShipping === method.id}
-                                onChange={(e) => setSelectedShipping(e.target.value)}
+                                onChange={(e) =>
+                                  setSelectedShipping(e.target.value)
+                                }
                                 disabled={isDisabled}
                                 className="w-4 h-4 accent-accent"
                               />
@@ -491,19 +523,19 @@ export default function CheckoutPage() {
                             <span className="font-mono text-sm">
                               {method.price === 0
                                 ? isFreeEligible
-                                  ? 'FREE'
+                                  ? "FREE"
                                   : `Free over ${formatPrice(2999)}`
                                 : formatPrice(method.price)}
                             </span>
                           </label>
-                        )
+                        );
                       })}
                     </div>
                   </div>
 
                   <div className="flex justify-between items-center pt-4">
                     <button
-                      onClick={() => setCurrentStep('information')}
+                      onClick={() => setCurrentStep("information")}
                       className="font-mono text-sm text-foreground-muted hover:text-accent transition-colors"
                     >
                       ← Return to information
@@ -516,39 +548,51 @@ export default function CheckoutPage() {
               )}
 
               {/* Payment Step */}
-              {currentStep === 'payment' && (
+              {currentStep === "payment" && (
                 <div className="space-y-8">
                   <div className="border border-border p-4 space-y-2">
                     <div className="flex justify-between">
-                      <span className="font-mono text-sm text-foreground-muted">Contact</span>
+                      <span className="font-mono text-sm text-foreground-muted">
+                        Contact
+                      </span>
                       <span className="font-mono text-sm">{address.email}</span>
                       <button
-                        onClick={() => setCurrentStep('information')}
+                        onClick={() => setCurrentStep("information")}
                         className="font-mono text-sm text-accent"
                       >
                         Change
                       </button>
                     </div>
                     <div className="border-t border-border pt-2 flex justify-between">
-                      <span className="font-mono text-sm text-foreground-muted">Ship to</span>
+                      <span className="font-mono text-sm text-foreground-muted">
+                        Ship to
+                      </span>
                       <span className="font-mono text-sm">
                         {address.address}, {address.city}
                       </span>
                       <button
-                        onClick={() => setCurrentStep('information')}
+                        onClick={() => setCurrentStep("information")}
                         className="font-mono text-sm text-accent"
                       >
                         Change
                       </button>
                     </div>
                     <div className="border-t border-border pt-2 flex justify-between">
-                      <span className="font-mono text-sm text-foreground-muted">Method</span>
+                      <span className="font-mono text-sm text-foreground-muted">
+                        Method
+                      </span>
                       <span className="font-mono text-sm">
-                        {shippingMethods.find((m) => m.id === selectedShipping)?.name} ·{' '}
-                        {shippingCost === 0 ? 'FREE' : formatPrice(shippingCost)}
+                        {
+                          shippingMethods.find((m) => m.id === selectedShipping)
+                            ?.name
+                        }{" "}
+                        ·{" "}
+                        {shippingCost === 0
+                          ? "FREE"
+                          : formatPrice(shippingCost)}
                       </span>
                       <button
-                        onClick={() => setCurrentStep('shipping')}
+                        onClick={() => setCurrentStep("shipping")}
                         className="font-mono text-sm text-accent"
                       >
                         Change
@@ -566,8 +610,8 @@ export default function CheckoutPage() {
                           key={method.id}
                           className={`flex items-center gap-4 p-4 border cursor-pointer transition-colors ${
                             selectedPayment === method.id
-                              ? 'border-accent bg-accent/5'
-                              : 'border-border hover:border-foreground-muted'
+                              ? "border-accent bg-accent/5"
+                              : "border-border hover:border-foreground-muted"
                           }`}
                         >
                           <input
@@ -576,16 +620,20 @@ export default function CheckoutPage() {
                             value={method.id}
                             checked={selectedPayment === method.id}
                             onChange={(e) => {
-                              setSelectedPayment(e.target.value)
-                              setOrderId(null)
-                              setOrderNumber(null)
+                              setSelectedPayment(e.target.value);
+                              setOrderId(null);
+                              setOrderNumber(null);
                             }}
                             className="w-4 h-4 accent-accent"
                           />
                           <span className="text-xl">{method.icon}</span>
                           <div>
-                            <span className="font-mono text-sm font-semibold">{method.name}</span>
-                            <p className="font-mono text-xs text-foreground-muted">{method.description}</p>
+                            <span className="font-mono text-sm font-semibold">
+                              {method.name}
+                            </span>
+                            <p className="font-mono text-xs text-foreground-muted">
+                              {method.description}
+                            </p>
                           </div>
                         </label>
                       ))}
@@ -594,14 +642,17 @@ export default function CheckoutPage() {
 
                   {paymentError && (
                     <div className="p-4 border border-red-500 bg-red-500/10">
-                      <p className="font-mono text-sm text-red-500">{paymentError}</p>
+                      <p className="font-mono text-sm text-red-500">
+                        {paymentError}
+                      </p>
                     </div>
                   )}
 
-                  {selectedPayment === 'cod' && (
+                  {selectedPayment === "cod" && (
                     <div className="p-4 border border-border">
                       <p className="font-mono text-sm text-foreground-muted">
-                        Pay ₹50 extra for Cash on Delivery. Payment to be collected upon delivery.
+                        Pay ₹50 extra for Cash on Delivery. Payment to be
+                        collected upon delivery.
                       </p>
                     </div>
                   )}
@@ -614,25 +665,26 @@ export default function CheckoutPage() {
                       </span>
                     </div>
                     <p className="font-mono text-xs text-foreground-muted">
-                      This order has a carbon footprint of {carbonFootprint.toFixed(1)} kg CO₂. 
-                      We will offset 100% through our partner reforestation projects.
+                      This order has a carbon footprint of{" "}
+                      {carbonFootprint.toFixed(1)} kg CO₂. We will offset 100%
+                      through our partner reforestation projects.
                     </p>
                   </div>
 
                   <div className="flex justify-between items-center pt-4">
                     <button
-                      onClick={() => setCurrentStep('shipping')}
+                      onClick={() => setCurrentStep("shipping")}
                       className="font-mono text-sm text-foreground-muted hover:text-accent transition-colors"
                     >
                       ← Return to shipping
                     </button>
-                    
-                    {selectedPayment === 'razorpay' ? (
+
+                    {selectedPayment === "razorpay" ? (
                       orderId ? (
                         <RazorpayButton
                           orderId={orderId}
                           amount={total}
-                          orderNumber={orderNumber || ''}
+                          orderNumber={orderNumber || ""}
                           customerName={`${address.firstName} ${address.lastName}`}
                           customerEmail={address.email}
                           customerPhone={address.phone}
@@ -646,7 +698,9 @@ export default function CheckoutPage() {
                           isLoading={isProcessing}
                           className="min-w-[200px]"
                         >
-                          {isProcessing ? 'Creating Order...' : 'Proceed to Pay'}
+                          {isProcessing
+                            ? "Creating Order..."
+                            : "Proceed to Pay"}
                         </Button>
                       )
                     ) : (
@@ -656,7 +710,9 @@ export default function CheckoutPage() {
                         isLoading={isProcessing}
                         className="min-w-[200px]"
                       >
-                        {isProcessing ? 'Processing...' : `Place Order (${formatPrice(total)})`}
+                        {isProcessing
+                          ? "Processing..."
+                          : `Place Order (${formatPrice(total)})`}
                       </Button>
                     )}
                   </div>
@@ -673,7 +729,10 @@ export default function CheckoutPage() {
 
                 <div className="space-y-4 mb-6">
                   {cartItems.map((item) => (
-                    <div key={`${item.product.id}-${item.size}`} className="flex gap-4">
+                    <div
+                      key={`${item.product.id}-${item.size}`}
+                      className="flex gap-4"
+                    >
                       <div className="relative w-16 h-16 bg-background-secondary border border-border flex-shrink-0">
                         <div className="absolute -top-2 -right-2 w-5 h-5 bg-foreground-muted text-background flex items-center justify-center font-mono text-xs">
                           {item.quantity}
@@ -683,7 +742,9 @@ export default function CheckoutPage() {
                         </div>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-mono text-sm truncate">{item.product.name}</p>
+                        <p className="font-mono text-sm truncate">
+                          {item.product.name}
+                        </p>
                         <p className="font-mono text-xs text-foreground-muted">
                           Size: {item.size}
                         </p>
@@ -702,7 +763,9 @@ export default function CheckoutPage() {
                   </div>
                   <div className="flex justify-between font-mono text-sm">
                     <span className="text-foreground-muted">Shipping</span>
-                    <span>{shippingCost === 0 ? 'FREE' : formatPrice(shippingCost)}</span>
+                    <span>
+                      {shippingCost === 0 ? "FREE" : formatPrice(shippingCost)}
+                    </span>
                   </div>
                   {codCharges > 0 && (
                     <div className="flex justify-between font-mono text-sm">
@@ -719,7 +782,9 @@ export default function CheckoutPage() {
 
                 <div className="border-t border-border pt-4 mt-4">
                   <div className="flex justify-between items-baseline">
-                    <span className="font-display text-lg font-bold">TOTAL</span>
+                    <span className="font-display text-lg font-bold">
+                      TOTAL
+                    </span>
                     <span className="font-display text-2xl font-bold text-accent">
                       {formatPrice(total)}
                     </span>
@@ -748,5 +813,5 @@ export default function CheckoutPage() {
 
       <Footer />
     </main>
-  )
+  );
 }

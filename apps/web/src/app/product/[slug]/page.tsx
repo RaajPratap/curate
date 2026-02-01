@@ -7,7 +7,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Container } from "@/components/layout/Container";
 import { ProductDetail, ProductGrid, Product } from "@/components/product";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { addToCart, selectCartCount } from "@/store/slices/cartSlice";
+import { addToCartAsync, selectCartCount } from "@/store/slices/cartSlice";
 import { productsService } from "@/lib/api/products";
 
 export default function ProductPage() {
@@ -60,12 +60,12 @@ export default function ProductPage() {
     size: string,
     quantity: number,
   ) => {
-    dispatch(addToCart({ product, size, quantity }));
+    dispatch(addToCartAsync({ product, size, quantity }));
   };
 
   const handleQuickAdd = (product: Product) => {
     const defaultSize = product.sizes?.[0] || "";
-    dispatch(addToCart({ product, size: defaultSize, quantity: 1 }));
+    dispatch(addToCartAsync({ product, size: defaultSize, quantity: 1 }));
   };
 
   // Loading state
