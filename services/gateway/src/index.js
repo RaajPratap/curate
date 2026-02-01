@@ -9,17 +9,28 @@ require("dotenv").config({ path: path.resolve(__dirname, "../../../.env") });
 
 const app = express();
 
-// Security middleware
-app.use(helmet());
+// CORS configuration - MUST be before helmet and other middleware
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || [
+  "http://localhost:3000",
+  "http://localhost:3001",
+];
 
-// CORS configuration
 app.use(
   cors({
-    origin: process.env.ALLOWED_ORIGINS?.split(",") || [
-      "http://localhost:3000",
-      "http://localhost:3001",
-    ],
+    origin: allowedOrigins,
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  }),
+);
+
+// Handle preflight requests explicitly
+app.options("*", cors());
+
+// Security middleware - after CORS
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
   }),
 );
 
