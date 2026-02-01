@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import {
   createContext,
@@ -7,181 +7,214 @@ import {
   useState,
   useCallback,
   ReactNode,
-} from 'react'
-import { useAppDispatch, useAppSelector } from '@/store/hooks'
+} from "react";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
   loginStart,
   loginSuccess,
   loginFailure,
   logout as logoutAction,
   clearError,
-} from '@/store/slices/authSlice'
+} from "@/store/slices/authSlice";
+import { setApiToken } from "@/lib/api/client";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
 interface User {
-  id: string
-  email: string
-  name: string
+  id: string;
+  email: string;
+  name: string;
+  firstName?: string;
+  lastName?: string;
   sustainabilityImpact: {
-    carbonSaved: number
-    waterSaved: number
-    ordersCount: number
-  }
+    carbonSaved: number;
+    waterSaved: number;
+    ordersCount: number;
+  };
 }
 
 interface AuthContextType {
-  user: User | null
-  isAuthenticated: boolean
-  isLoading: boolean
-  error: string | null
-  login: (email: string, password: string) => Promise<boolean>
-  register: (name: string, email: string, password: string) => Promise<boolean>
-  logout: () => void
-  clearAuthError: () => void
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+  login: (email: string, password: string) => Promise<boolean>;
+  register: (name: string, email: string, password: string) => Promise<boolean>;
+  logout: () => void;
+  clearAuthError: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock user database (in production, this would be API calls)
-const MOCK_USERS: Record<string, { password: string; user: User }> = {
-  'demo@curate.com': {
-    password: 'demo123',
-    user: {
-      id: '1',
-      email: 'demo@curate.com',
-      name: 'Demo User',
-      sustainabilityImpact: {
-        carbonSaved: 24.5,
-        waterSaved: 1250,
-        ordersCount: 3,
-      },
+// Transform backend user to frontend format
+function transformUser(backendUser: any): User {
+  return {
+    id: backendUser._id || backendUser.id,
+    email: backendUser.email,
+    name: backendUser.firstName
+      ? `${backendUser.firstName} ${backendUser.lastName || ""}`.trim()
+      : backendUser.username || backendUser.email.split("@")[0],
+    firstName: backendUser.firstName,
+    lastName: backendUser.lastName,
+    sustainabilityImpact: {
+      carbonSaved: backendUser.impact?.totalCarbonSaved || 0,
+      waterSaved: backendUser.impact?.totalWaterSaved || 0,
+      ordersCount: 0, // Would need to fetch from orders service
     },
-  },
+  };
 }
-
-// Simulate API delay
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const dispatch = useAppDispatch()
-  const { user, isLoading, error, token } = useAppSelector((state) => state.auth)
-  const [isInitialized, setIsInitialized] = useState(false)
+  const dispatch = useAppDispatch();
+  const { user, isLoading, error, token } = useAppSelector(
+    (state) => state.auth,
+  );
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Check for existing session on mount
   useEffect(() => {
     const initAuth = async () => {
-      const storedToken = localStorage.getItem('token')
-      const storedUser = localStorage.getItem('user')
+      const storedToken = localStorage.getItem("token");
+      const storedRefreshToken = localStorage.getItem("refreshToken");
+      const storedUser = localStorage.getItem("user");
 
       if (storedToken && storedUser) {
         try {
-          const userData = JSON.parse(storedUser)
-          dispatch(loginSuccess({ user: userData, token: storedToken }))
+          const userData = JSON.parse(storedUser);
+          setApiToken(storedToken);
+          dispatch(loginSuccess({ user: userData, token: storedToken }));
+
+          // Optionally verify token with backend
+          // Could add a /api/auth/me call here to verify token validity
         } catch {
           // Invalid stored data, clear it
-          localStorage.removeItem('token')
-          localStorage.removeItem('user')
+          localStorage.removeItem("token");
+          localStorage.removeItem("refreshToken");
+          localStorage.removeItem("user");
+          setApiToken(null);
         }
       }
-      setIsInitialized(true)
-    }
+      setIsInitialized(true);
+    };
 
-    initAuth()
-  }, [dispatch])
+    initAuth();
+  }, [dispatch]);
 
   const login = useCallback(
     async (email: string, password: string): Promise<boolean> => {
-      dispatch(loginStart())
-      await delay(800) // Simulate network request
+      dispatch(loginStart());
 
-      const normalizedEmail = email.toLowerCase()
-      const mockUser = MOCK_USERS[normalizedEmail]
+      try {
+        const response = await fetch(`${API_URL}/api/auth/login`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, password }),
+        });
 
-      if (mockUser && mockUser.password === password) {
-        const token = `mock_token_${Date.now()}`
-        localStorage.setItem('token', token)
-        localStorage.setItem('user', JSON.stringify(mockUser.user))
-        dispatch(loginSuccess({ user: mockUser.user, token }))
-        return true
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          dispatch(loginFailure(data.message || "Invalid email or password"));
+          return false;
+        }
+
+        const { accessToken, refreshToken, user: backendUser } = data.data;
+        const transformedUser = transformUser(backendUser);
+
+        // Store tokens and user
+        localStorage.setItem("token", accessToken);
+        localStorage.setItem("refreshToken", refreshToken);
+        localStorage.setItem("user", JSON.stringify(transformedUser));
+
+        // Set token for API calls
+        setApiToken(accessToken);
+
+        dispatch(loginSuccess({ user: transformedUser, token: accessToken }));
+        return true;
+      } catch (error) {
+        console.error("Login error:", error);
+        dispatch(loginFailure("Login failed. Please try again."));
+        return false;
       }
-
-      // Check if this is a registered user (from registration)
-      const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '{}')
-      if (registeredUsers[normalizedEmail]?.password === password) {
-        const token = `mock_token_${Date.now()}`
-        localStorage.setItem('token', token)
-        localStorage.setItem('user', JSON.stringify(registeredUsers[normalizedEmail].user))
-        dispatch(loginSuccess({ user: registeredUsers[normalizedEmail].user, token }))
-        return true
-      }
-
-      dispatch(loginFailure('Invalid email or password'))
-      return false
     },
-    [dispatch]
-  )
+    [dispatch],
+  );
 
   const register = useCallback(
     async (name: string, email: string, password: string): Promise<boolean> => {
-      dispatch(loginStart())
-      await delay(1000) // Simulate network request
+      dispatch(loginStart());
 
-      const normalizedEmail = email.toLowerCase()
+      try {
+        // Split name into firstName and lastName
+        const nameParts = name.trim().split(" ");
+        const firstName = nameParts[0];
+        const lastName = nameParts.slice(1).join(" ") || undefined;
 
-      // Check if user already exists
-      if (MOCK_USERS[normalizedEmail]) {
-        dispatch(loginFailure('An account with this email already exists'))
-        return false
+        const response = await fetch(`${API_URL}/api/auth/register`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email,
+            password,
+            firstName,
+            lastName,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          dispatch(loginFailure(data.message || "Registration failed"));
+          return false;
+        }
+
+        const { accessToken, refreshToken, user: backendUser } = data.data;
+        const transformedUser = transformUser(backendUser);
+
+        // Store tokens and user
+        localStorage.setItem("token", accessToken);
+        localStorage.setItem("refreshToken", refreshToken);
+        localStorage.setItem("user", JSON.stringify(transformedUser));
+
+        // Set token for API calls
+        setApiToken(accessToken);
+
+        dispatch(loginSuccess({ user: transformedUser, token: accessToken }));
+        return true;
+      } catch (error) {
+        console.error("Registration error:", error);
+        dispatch(loginFailure("Registration failed. Please try again."));
+        return false;
       }
-
-      const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '{}')
-      if (registeredUsers[normalizedEmail]) {
-        dispatch(loginFailure('An account with this email already exists'))
-        return false
-      }
-
-      // Create new user
-      const newUser: User = {
-        id: `user_${Date.now()}`,
-        email: normalizedEmail,
-        name,
-        sustainabilityImpact: {
-          carbonSaved: 0,
-          waterSaved: 0,
-          ordersCount: 0,
-        },
-      }
-
-      // Store in "database"
-      registeredUsers[normalizedEmail] = { password, user: newUser }
-      localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers))
-
-      // Auto-login after registration
-      const token = `mock_token_${Date.now()}`
-      localStorage.setItem('token', token)
-      localStorage.setItem('user', JSON.stringify(newUser))
-      dispatch(loginSuccess({ user: newUser, token }))
-      return true
     },
-    [dispatch]
-  )
+    [dispatch],
+  );
 
   const logout = useCallback(() => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    dispatch(logoutAction())
-  }, [dispatch])
+    localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
+    setApiToken(null);
+    dispatch(logoutAction());
+  }, [dispatch]);
 
   const clearAuthError = useCallback(() => {
-    dispatch(clearError())
-  }, [dispatch])
+    dispatch(clearError());
+  }, [dispatch]);
 
   // Don't render children until we've checked for existing session
   if (!isInitialized) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse font-mono text-foreground-muted">Loading...</div>
+        <div className="animate-pulse font-mono text-foreground-muted">
+          Loading...
+        </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -199,13 +232,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     >
       {children}
     </AuthContext.Provider>
-  )
+  );
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context
+  return context;
 }

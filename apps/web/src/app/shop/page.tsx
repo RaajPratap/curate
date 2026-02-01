@@ -1,66 +1,63 @@
-'use client'
+"use client";
 
-import { useState, useMemo } from 'react'
-import { Header } from '@/components/layout/Header'
-import { Footer } from '@/components/layout/Footer'
-import { Container } from '@/components/layout/Container'
-import { ProductGrid, Product } from '@/components/product'
-import { Select, Button, Badge } from '@/components/ui'
-import { useAppDispatch, useAppSelector } from '@/store/hooks'
-import { addToCart, selectCartCount } from '@/store/slices/cartSlice'
-import { mockProducts, categories, ecoRatings, sortOptions } from '@/lib/mock-data'
+import { useState, useEffect, useMemo } from "react";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
+import { Container } from "@/components/layout/Container";
+import { ProductGrid, Product } from "@/components/product";
+import { Select, Button, Badge } from "@/components/ui";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { addToCart, selectCartCount } from "@/store/slices/cartSlice";
+import { productsService } from "@/lib/api/products";
+import { categories, ecoRatings, sortOptions } from "@/lib/mock-data";
 
 export default function ShopPage() {
-  const dispatch = useAppDispatch()
-  const cartCount = useAppSelector(selectCartCount)
+  const dispatch = useAppDispatch();
+  const cartCount = useAppSelector(selectCartCount);
 
-  const [category, setCategory] = useState('')
-  const [ecoRating, setEcoRating] = useState('')
-  const [sortBy, setSortBy] = useState('newest')
-  const [showFilters, setShowFilters] = useState(false)
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredProducts = useMemo(() => {
-    let products = [...mockProducts]
+  const [category, setCategory] = useState("");
+  const [ecoRating, setEcoRating] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
+  const [showFilters, setShowFilters] = useState(false);
 
-    // Filter by category
-    if (category) {
-      products = products.filter((p) => p.category === category)
-    }
+  // Fetch products from API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await productsService.getProducts({
+          category: category || undefined,
+          ecoRating: ecoRating || undefined,
+          sortBy: sortBy as
+            | "newest"
+            | "price-asc"
+            | "price-desc"
+            | "eco-rating",
+        });
+        setProducts(result.products);
+      } catch (err) {
+        console.error("Failed to fetch products:", err);
+        setError("Failed to load products. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    // Filter by eco rating
-    if (ecoRating) {
-      products = products.filter((p) => p.sustainability.ecoRating === ecoRating)
-    }
-
-    // Sort
-    switch (sortBy) {
-      case 'price-asc':
-        products.sort((a, b) => a.price - b.price)
-        break
-      case 'price-desc':
-        products.sort((a, b) => b.price - a.price)
-        break
-      case 'eco-rating':
-        products.sort((a, b) =>
-          a.sustainability.ecoRating.localeCompare(b.sustainability.ecoRating)
-        )
-        break
-      case 'newest':
-      default:
-        products.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0))
-        break
-    }
-
-    return products
-  }, [category, ecoRating, sortBy])
+    fetchProducts();
+  }, [category, ecoRating, sortBy]);
 
   const handleQuickAdd = (product: Product) => {
     // Default to first size if available
-    const defaultSize = product.sizes?.[0] || ''
-    dispatch(addToCart({ product, size: defaultSize, quantity: 1 }))
-  }
+    const defaultSize = product.sizes?.[0] || "";
+    dispatch(addToCart({ product, size: defaultSize, quantity: 1 }));
+  };
 
-  const activeFiltersCount = [category, ecoRating].filter(Boolean).length
+  const activeFiltersCount = [category, ecoRating].filter(Boolean).length;
 
   return (
     <main className="min-h-screen">
@@ -73,7 +70,7 @@ export default function ShopPage() {
             SHOP
           </h1>
           <p className="font-mono text-foreground-muted text-sm uppercase tracking-wider">
-            {filteredProducts.length} Products
+            {loading ? "Loading..." : `${products.length} Products`}
           </p>
         </Container>
       </section>
@@ -117,8 +114,8 @@ export default function ShopPage() {
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    setCategory('')
-                    setEcoRating('')
+                    setCategory("");
+                    setEcoRating("");
                   }}
                 >
                   Clear All
@@ -160,8 +157,8 @@ export default function ShopPage() {
                   variant="secondary"
                   size="sm"
                   onClick={() => {
-                    setCategory('')
-                    setEcoRating('')
+                    setCategory("");
+                    setEcoRating("");
                   }}
                   className="w-full"
                 >
@@ -176,7 +173,7 @@ export default function ShopPage() {
             <div className="flex flex-wrap gap-2 mb-6">
               {category && (
                 <button
-                  onClick={() => setCategory('')}
+                  onClick={() => setCategory("")}
                   className="inline-flex items-center gap-2 px-3 py-1 bg-background-secondary border border-border font-mono text-xs uppercase tracking-wider hover:border-accent transition-colors"
                 >
                   {categories.find((c) => c.value === category)?.label}
@@ -185,7 +182,7 @@ export default function ShopPage() {
               )}
               {ecoRating && (
                 <button
-                  onClick={() => setEcoRating('')}
+                  onClick={() => setEcoRating("")}
                   className="inline-flex items-center gap-2 px-3 py-1 bg-background-secondary border border-border font-mono text-xs uppercase tracking-wider hover:border-accent transition-colors"
                 >
                   Eco Rating: {ecoRating}
@@ -195,16 +192,47 @@ export default function ShopPage() {
             </div>
           )}
 
+          {/* Loading State */}
+          {loading && (
+            <div className="flex items-center justify-center py-24">
+              <div className="text-center">
+                <div className="inline-block w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mb-4" />
+                <p className="font-mono text-foreground-muted text-sm uppercase tracking-wider">
+                  Loading products...
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && !loading && (
+            <div className="flex items-center justify-center py-24">
+              <div className="text-center">
+                <p className="font-mono text-red-500 text-sm uppercase tracking-wider mb-4">
+                  {error}
+                </p>
+                <Button
+                  variant="secondary"
+                  onClick={() => window.location.reload()}
+                >
+                  Retry
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Product Grid */}
-          <ProductGrid
-            products={filteredProducts}
-            columns={4}
-            onQuickAdd={handleQuickAdd}
-            emptyMessage="No products match your filters"
-          />
+          {!loading && !error && (
+            <ProductGrid
+              products={products}
+              columns={4}
+              onQuickAdd={handleQuickAdd}
+              emptyMessage="No products match your filters"
+            />
+          )}
 
           {/* Load More */}
-          {filteredProducts.length >= 8 && (
+          {!loading && !error && products.length >= 8 && (
             <div className="mt-12 text-center">
               <Button variant="secondary" size="lg">
                 Load More
@@ -216,5 +244,5 @@ export default function ShopPage() {
 
       <Footer />
     </main>
-  )
+  );
 }
