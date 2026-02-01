@@ -19,7 +19,11 @@
     "dev:gateway": "turbo dev --filter=gateway",
     "dev:services": "turbo dev --filter=auth-service --filter=products-service --filter=orders-service --filter=gateway",
     "build:web": "turbo build --filter=web",
-    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\""
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
+    "seed": "node scripts/seed-all.js",
+    "seed:auth": "node services/auth/src/seed.js",
+    "seed:products": "node services/products/src/seed.js",
+    "seed:orders": "node services/orders/src/seed.js"
   },
   "devDependencies": {
     "prettier": "^3.2.5",
