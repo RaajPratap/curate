@@ -1,9 +1,10 @@
-const express = require('express');
-const cors = require('cors');
-const mongoose = require('mongoose');
-require('dotenv').config();
+const express = require("express");
+const cors = require("cors");
+const mongoose = require("mongoose");
+const path = require("path");
+require("dotenv").config({ path: path.resolve(__dirname, "../../../.env") });
 
-const productRoutes = require('./routes/productRoutes');
+const productRoutes = require("./routes/productRoutes");
 
 const app = express();
 
@@ -12,20 +13,20 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use('/api/products', productRoutes);
+app.use("/api/products", productRoutes);
 
 // Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', service: 'products-service' });
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", service: "products-service" });
 });
 
 // Connect to MongoDB
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
-    console.log('MongoDB connected - Products Service');
+    console.log("MongoDB connected - Products Service");
   } catch (error) {
-    console.error('MongoDB connection error:', error);
+    console.error("MongoDB connection error:", error);
     process.exit(1);
   }
 };

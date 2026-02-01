@@ -1,11 +1,12 @@
-const express = require('express');
-const cors = require('cors');
-const mongoose = require('mongoose');
-require('dotenv').config();
+const express = require("express");
+const cors = require("cors");
+const mongoose = require("mongoose");
+const path = require("path");
+require("dotenv").config({ path: path.resolve(__dirname, "../../../.env") });
 
-const orderRoutes = require('./routes/orderRoutes');
-const cartRoutes = require('./routes/cartRoutes');
-const paymentRoutes = require('./routes/paymentRoutes');
+const orderRoutes = require("./routes/orderRoutes");
+const cartRoutes = require("./routes/cartRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
 
 const app = express();
 
@@ -14,22 +15,22 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use('/api/orders', orderRoutes);
-app.use('/api/cart', cartRoutes);
-app.use('/api/payments', paymentRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/cart", cartRoutes);
+app.use("/api/payments", paymentRoutes);
 
 // Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', service: 'orders-service' });
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", service: "orders-service" });
 });
 
 // Connect to MongoDB
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
-    console.log('MongoDB connected - Orders Service');
+    console.log("MongoDB connected - Orders Service");
   } catch (error) {
-    console.error('MongoDB connection error:', error);
+    console.error("MongoDB connection error:", error);
     process.exit(1);
   }
 };
