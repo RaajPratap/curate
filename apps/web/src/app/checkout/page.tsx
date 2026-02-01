@@ -7,6 +7,7 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { Container } from '@/components/layout/Container'
 import { Button, Card, CardContent, Badge, Input } from '@/components/ui'
+import { RazorpayButton } from '@/components/payment'
 import { useAppDispatch, useAppSelector } from '@/store/hooks'
 import {
   selectCartItems,
@@ -16,6 +17,8 @@ import {
   clearCart,
 } from '@/store/slices/cartSlice'
 import { formatPrice } from '@/lib/utils'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
 
 type CheckoutStep = 'information' | 'shipping' | 'payment'
 
@@ -68,10 +71,8 @@ const shippingMethods: ShippingMethod[] = [
 ]
 
 const paymentMethods = [
-  { id: 'card', name: 'Credit/Debit Card', icon: '💳' },
-  { id: 'upi', name: 'UPI', icon: '📱' },
-  { id: 'netbanking', name: 'Net Banking', icon: '🏦' },
-  { id: 'cod', name: 'Cash on Delivery', icon: '💵' },
+  { id: 'razorpay', name: 'Pay with Razorpay', icon: '💳', description: 'Cards, UPI, Net Banking, Wallets' },
+  { id: 'cod', name: 'Cash on Delivery', icon: '💵', description: '+₹50 COD charges' },
 ]
 
 export default function CheckoutPage() {
@@ -98,13 +99,17 @@ export default function CheckoutPage() {
   })
 
   const [selectedShipping, setSelectedShipping] = useState<string>('standard')
-  const [selectedPayment, setSelectedPayment] = useState<string>('card')
+  const [selectedPayment, setSelectedPayment] = useState<string>('razorpay')
   const [saveInfo, setSaveInfo] = useState(true)
+  const [orderId, setOrderId] = useState<string | null>(null)
+  const [orderNumber, setOrderNumber] = useState<string | null>(null)
+  const [paymentError, setPaymentError] = useState<string | null>(null)
 
   const shippingCost = cartTotal >= 2999 
     ? 0 
     : shippingMethods.find(m => m.id === selectedShipping)?.price || 199
-  const total = cartTotal + shippingCost
+  const codCharges = selectedPayment === 'cod' ? 50 : 0
+  const total = cartTotal + shippingCost + codCharges
 
   const steps: { id: CheckoutStep; label: string; number: number }[] = [
     { id: 'information', label: 'Information', number: 1 },
@@ -140,10 +145,74 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = async () => {
     setIsProcessing(true)
-    // Simulate order processing
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    setPaymentError(null)
+
+    try {
+      // Create order in backend
+      const orderData = {
+        items: cartItems.map(item => ({
+          productId: item.product.id,
+          name: item.product.name,
+          price: item.product.price,
+          quantity: item.quantity,
+          variant: { size: item.size, color: item.color || 'Default' },
+          image: item.product.images?.[0] || '/placeholder.jpg',
+        })),
+        shippingAddress: {
+          firstName: address.firstName,
+          lastName: address.lastName,
+          street: address.address,
+          apartment: address.apartment,
+          city: address.city,
+          state: address.state,
+          zipCode: address.pincode,
+          country: 'India',
+          phone: address.phone,
+        },
+        guestEmail: address.email,
+        shippingMethod: selectedShipping,
+        paymentMethod: selectedPayment,
+      }
+
+      const response = await fetch(`${API_URL}/api/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderData),
+      })
+
+      const data = await response.json()
+
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to create order')
+      }
+
+      setOrderId(data.data.order._id)
+      setOrderNumber(data.data.order.orderNumber)
+
+      // For COD orders, redirect immediately
+      if (selectedPayment === 'cod') {
+        dispatch(clearCart())
+        router.push(`/order/${data.data.order.orderNumber}`)
+      }
+      // For Razorpay, the button will handle payment
+    } catch (error: any) {
+      console.error('Order creation error:', error)
+      setPaymentError(error.message || 'Failed to create order')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  const handlePaymentSuccess = () => {
     dispatch(clearCart())
-    router.push('/order/CUR-2026-' + Math.random().toString().slice(2, 8))
+    if (orderNumber) {
+      router.push(`/order/${orderNumber}`)
+    }
+  }
+
+  const handlePaymentError = (error: any) => {
+    console.error('Payment error:', error)
+    setPaymentError(error.message || 'Payment failed. Please try again.')
   }
 
   if (cartItems.length === 0) {
@@ -506,30 +575,34 @@ export default function CheckoutPage() {
                             name="payment"
                             value={method.id}
                             checked={selectedPayment === method.id}
-                            onChange={(e) => setSelectedPayment(e.target.value)}
+                            onChange={(e) => {
+                              setSelectedPayment(e.target.value)
+                              setOrderId(null)
+                              setOrderNumber(null)
+                            }}
                             className="w-4 h-4 accent-accent"
                           />
                           <span className="text-xl">{method.icon}</span>
-                          <span className="font-mono text-sm font-semibold">{method.name}</span>
+                          <div>
+                            <span className="font-mono text-sm font-semibold">{method.name}</span>
+                            <p className="font-mono text-xs text-foreground-muted">{method.description}</p>
+                          </div>
                         </label>
                       ))}
                     </div>
                   </div>
 
-                  {selectedPayment === 'card' && (
-                    <div className="space-y-4 p-4 border border-border">
-                      <Input label="Card Number" placeholder="1234 5678 9012 3456" />
-                      <div className="grid grid-cols-2 gap-4">
-                        <Input label="Expiry Date" placeholder="MM/YY" />
-                        <Input label="CVV" placeholder="123" type="password" />
-                      </div>
-                      <Input label="Name on Card" placeholder="Full name as on card" />
+                  {paymentError && (
+                    <div className="p-4 border border-red-500 bg-red-500/10">
+                      <p className="font-mono text-sm text-red-500">{paymentError}</p>
                     </div>
                   )}
 
-                  {selectedPayment === 'upi' && (
+                  {selectedPayment === 'cod' && (
                     <div className="p-4 border border-border">
-                      <Input label="UPI ID" placeholder="yourname@upi" />
+                      <p className="font-mono text-sm text-foreground-muted">
+                        Pay ₹50 extra for Cash on Delivery. Payment to be collected upon delivery.
+                      </p>
                     </div>
                   )}
 
@@ -553,14 +626,39 @@ export default function CheckoutPage() {
                     >
                       ← Return to shipping
                     </button>
-                    <Button
-                      variant="brutal"
-                      onClick={handlePlaceOrder}
-                      isLoading={isProcessing}
-                      className="min-w-[200px]"
-                    >
-                      {isProcessing ? 'Processing...' : `Pay ${formatPrice(total)}`}
-                    </Button>
+                    
+                    {selectedPayment === 'razorpay' ? (
+                      orderId ? (
+                        <RazorpayButton
+                          orderId={orderId}
+                          amount={total}
+                          orderNumber={orderNumber || ''}
+                          customerName={`${address.firstName} ${address.lastName}`}
+                          customerEmail={address.email}
+                          customerPhone={address.phone}
+                          onSuccess={handlePaymentSuccess}
+                          onError={handlePaymentError}
+                        />
+                      ) : (
+                        <Button
+                          variant="brutal"
+                          onClick={handlePlaceOrder}
+                          isLoading={isProcessing}
+                          className="min-w-[200px]"
+                        >
+                          {isProcessing ? 'Creating Order...' : 'Proceed to Pay'}
+                        </Button>
+                      )
+                    ) : (
+                      <Button
+                        variant="brutal"
+                        onClick={handlePlaceOrder}
+                        isLoading={isProcessing}
+                        className="min-w-[200px]"
+                      >
+                        {isProcessing ? 'Processing...' : `Place Order (${formatPrice(total)})`}
+                      </Button>
+                    )}
                   </div>
                 </div>
               )}
@@ -606,6 +704,12 @@ export default function CheckoutPage() {
                     <span className="text-foreground-muted">Shipping</span>
                     <span>{shippingCost === 0 ? 'FREE' : formatPrice(shippingCost)}</span>
                   </div>
+                  {codCharges > 0 && (
+                    <div className="flex justify-between font-mono text-sm">
+                      <span className="text-foreground-muted">COD Charges</span>
+                      <span>{formatPrice(codCharges)}</span>
+                    </div>
+                  )}
                   {cartTotal < 2999 && (
                     <p className="font-mono text-xs text-foreground-muted">
                       Add {formatPrice(2999 - cartTotal)} more for free shipping
