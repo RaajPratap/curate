@@ -47,11 +47,25 @@ const authLimiter = rateLimit({
   },
 });
 
-// Service URLs
+// Service URLs - handle both localhost and production URLs
+const formatServiceUrl = (url) => {
+  if (!url) return url;
+  // If it's already a full URL, return as-is
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+  // If it's a Render internal hostname, add https://
+  return `https://${url}`;
+};
+
 const SERVICES = {
-  auth: process.env.AUTH_SERVICE_URL || "http://localhost:3001",
-  products: process.env.PRODUCTS_SERVICE_URL || "http://localhost:3002",
-  orders: process.env.ORDERS_SERVICE_URL || "http://localhost:3003",
+  auth:
+    formatServiceUrl(process.env.AUTH_SERVICE_URL) || "http://localhost:3004",
+  products:
+    formatServiceUrl(process.env.PRODUCTS_SERVICE_URL) ||
+    "http://localhost:3002",
+  orders:
+    formatServiceUrl(process.env.ORDERS_SERVICE_URL) || "http://localhost:3003",
 };
 
 // Proxy options factory

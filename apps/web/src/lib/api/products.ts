@@ -191,6 +191,9 @@ export const productsService = {
       const response = await productsApi.get<SingleProductResponse>(
         `/api/products/${slug}`,
       );
+      if (!response?.data?.product) {
+        return null;
+      }
       return transformProduct(response.data.product);
     } catch (error) {
       console.error("Failed to fetch product:", error);

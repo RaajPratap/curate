@@ -1,0 +1,104 @@
+# Render Blueprint for CURATE Backend Services
+# https://render.com/docs/blueprint-spec
+
+services:
+  # API Gateway - routes requests to microservices
+  - type: web
+    name: curate-gateway
+    runtime: node
+    region: oregon
+    plan: free
+    rootDir: services/gateway
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: AUTH_SERVICE_URL
+        fromService:
+          name: curate-auth
+          type: web
+          property: host
+      - key: PRODUCTS_SERVICE_URL
+        fromService:
+          name: curate-products
+          type: web
+          property: host
+      - key: ORDERS_SERVICE_URL
+        fromService:
+          name: curate-orders
+          type: web
+          property: host
+      - key: ALLOWED_ORIGINS
+        sync: false
+
+  # Auth Service
+  - type: web
+    name: curate-auth
+    runtime: node
+    region: oregon
+    plan: free
+    rootDir: services/auth
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 15d
+      - key: REFRESH_TOKEN_SECRET
+        sync: false
+      - key: REFRESH_TOKEN_EXPIRES_IN
+        value: 7d
+
+  # Products Service
+  - type: web
+    name: curate-products
+    runtime: node
+    region: oregon
+    plan: free
+    rootDir: services/products
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false
+
+  # Orders Service
+  - type: web
+    name: curate-orders
+    runtime: node
+    region: oregon
+    plan: free
+    rootDir: services/orders
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
