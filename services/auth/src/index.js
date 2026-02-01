@@ -32,7 +32,7 @@ const connectDB = async () => {
 };
 
 // Start server
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.AUTH_PORT || 3004;
 
 connectDB().then(() => {
   app.listen(PORT, () => {
