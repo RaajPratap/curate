@@ -1014,14 +1014,20 @@ const seedProducts = async () => {
     await Product.deleteMany({});
     console.log("Cleared existing products");
 
-    const result = await Product.insertMany(products);
-    console.log(`Seeded ${result.length} products`);
+    // Use save() instead of insertMany() to trigger pre-save hooks (for slug generation)
+    const savedProducts = [];
+    for (const productData of products) {
+      const product = new Product(productData);
+      await product.save();
+      savedProducts.push(product);
+    }
+    console.log(`Seeded ${savedProducts.length} products`);
 
     console.log("\n--- Product Summary ---");
-    result.forEach((product) => {
+    savedProducts.forEach((product) => {
       const totalStock = product.variants.reduce((sum, v) => sum + v.stock, 0);
       console.log(
-        `  ${product.name} - ₹${product.price} (Stock: ${totalStock})`,
+        `  ${product.name} (${product.slug}) - ₹${product.price} (Stock: ${totalStock})`,
       );
     });
 
