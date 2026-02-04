@@ -56,9 +56,9 @@ export default function Home() {
       <Header cartCount={cartCount} />
 
       {/* Hero Section */}
-      <section className="relative min-h-[90vh] flex items-center justify-center border-b border-border grid-overlay">
+      <section className="relative min-h-[90vh] flex items-center  justify-center border-b border-border grid-overlay overflow-hidden">
         <Container className="text-center">
-          <h1 className="font-display text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter mb-6">
+          <h1 className="font-display text-4xl md:text-7xl lg:text-8xl font-bold tracking-tighter mb-6">
             SUSTAINABLE
             <br />
             <span className="text-stroke-accent">STREETWEAR</span>
